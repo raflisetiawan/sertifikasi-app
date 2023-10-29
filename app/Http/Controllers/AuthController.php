@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AssignUserRole;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -15,28 +17,28 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|confirmed|min:6',
+            'phone_number' => [
+                'required',
+                'regex:/^(?:\+62|0)[0-9]{8,15}$/'
+            ],
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        try {
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'phone_number' => $request->phone_number,
+        ]);
+        event(new AssignUserRole($user));
 
-            return response()->json([
-                'message' => 'User registered successfully.',
-                'user' => $user,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Terjadi kesalahan saat memproses pendaftaran. Silakan coba lagi nanti.'
-            ], 500);
-        }
+        return response()->json([
+            'message' => 'User registered successfully.',
+            'user' => $user,
+        ], 201);
     }
 
     public function sign_in(Request $request)
@@ -78,6 +80,37 @@ class AuthController extends Controller
         auth()->logout();
         return response()->json([
             'success'    => true
+        ], 200);
+    }
+
+    public function getUserWithRole(Request $request)
+    {
+        // Pastikan pengguna sudah diautentikasi untuk mengakses data pengguna dengan peran.
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        // Ambil peran pengguna
+        $role = $user->role;
+
+        // Anda dapat mengakses data peran melalui $role, misalnya:
+        $roleName = $role->name; // Nama peran pengguna
+
+        // Menggabungkan data pengguna dan peran dalam respons
+        $userData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone_number' => $user->phone_number,
+            'role' => $roleName, // Menambahkan nama peran
+        ];
+
+        return response()->json([
+            'user' => $userData,
         ], 200);
     }
 }
