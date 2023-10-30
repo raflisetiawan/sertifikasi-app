@@ -15,11 +15,12 @@ class CourseController extends Controller
      */
     public function index()
     {
-        $courses = Course::latest()->paginate(5);
+        $courses = Course::orderBy('created_at', 'desc')->get();
 
-        //return collection of posts as a resource
+        // Return a collection of courses as a resource
         return new CourseResource(true, 'List Data Courses', $courses);
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -72,7 +73,6 @@ class CourseController extends Controller
     public function show(string $id)
     {
         $course = Course::find($id);
-
         return new CourseResource(true, 'Detail Data course!', $course);
     }
 
@@ -145,8 +145,9 @@ class CourseController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Course $course)
+    public function destroy($id)
     {
+        $course = Course::findOrFail($id);
         Storage::delete('public/courses/' . $course->image);
 
         //delete course

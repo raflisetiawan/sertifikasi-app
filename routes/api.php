@@ -19,7 +19,15 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->get('/user', [AuthController::class, 'getUserWithRole']);
 
-Route::post('/course', [CourseController::class, 'store']);
+Route::middleware('auth:sanctum', 'can:create,App\Models\Course')->group(function () {
+    Route::post('/course', [CourseController::class, 'store']);
+    Route::delete('/course/{id}', [CourseController::class, 'destroy']);
+    Route::patch('/course/{id}', [CourseController::class, 'update']);
+});
+
+Route::get('/course', [CourseController::class, 'index']);
+Route::get('/course/{id}', [CourseController::class, 'show']);
+
 // Route::apiResource('/course', CourseController::class);
 Route::post('/signup', [AuthController::class, 'sign_up']);
 Route::post('/signin', [AuthController::class, 'sign_in']);
