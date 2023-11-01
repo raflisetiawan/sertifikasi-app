@@ -43,7 +43,8 @@ class CourseController extends Controller
             'place' => 'required|string',
             'time' => 'required|string',
             'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Opsional, jika Anda mengizinkan gambar.
-            'operational' => 'required|date',
+            'operational_start' => 'required|date', // Perbarui nama kolom
+            'operational_end' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -61,7 +62,8 @@ class CourseController extends Controller
             'facility' => $request->facility,
             'place' => $request->place,
             'time' => $request->time,
-            'operational' => $request->operational,
+            'operational_start' => $request->operational_start, // Perbarui nama kolom
+            'operational_end' => $request->operational_end,
         ]);
 
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
@@ -96,7 +98,8 @@ class CourseController extends Controller
             'price' => 'required|numeric',
             'place' => 'required|string',
             'time' => 'required|string', // Opsional, jika Anda mengizinkan gambar.
-            'operational' => 'required|date',
+            'operational_start' => 'required|date', // Perbarui nama kolom
+            'operational_end' => 'required|date',
         ]);
 
         if ($validator->fails()) {
@@ -126,7 +129,8 @@ class CourseController extends Controller
                 'facility' => $request->facility,
                 'place' => $request->place,
                 'time' => $request->time,
-                'operational' => $request->operational,
+                'operational_start' => $request->operational_start, // Perbarui nama kolom
+                'operational_end' => $request->operational_end,
             ]);
         } else {
             $course->update([
@@ -136,7 +140,8 @@ class CourseController extends Controller
                 'facility' => $request->facility,
                 'place' => $request->place,
                 'time' => $request->time,
-                'operational' => $request->operational,
+                'operational_start' => $request->operational_start, // Perbarui nama kolom
+                'operational_end' => $request->operational_end,
             ]);
         }
         return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $course);

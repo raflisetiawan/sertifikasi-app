@@ -17,7 +17,8 @@ class Course extends Model
         'place',
         'time',
         'image',
-        'operational',
+        'operational_start', // Tambahkan kolom ini
+        'operational_end',
     ];
 
     protected function resume(): Attribute
