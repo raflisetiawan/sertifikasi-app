@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\FaqController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -43,3 +44,13 @@ Route::post('/email/verify/resend', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('message', 'Verification link sent!');
 })->middleware(['auth:api', 'throttle:6,1'])->name('verification.send');
+
+
+Route::get('/faqs', [FaqController::class, 'index']);
+Route::get('/faqs/{faq}', [FaqController::class, 'show']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/faqs', [FaqController::class, 'store']);
+    Route::put('/faqs/{faq}', [FaqController::class, 'update']);
+    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
+});
