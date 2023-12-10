@@ -11,6 +11,7 @@ class Course extends Model
     use HasFactory;
     protected $fillable = [
         'name',
+        'trainer_id',
         'description',
         'facility',
         'price',
@@ -26,5 +27,10 @@ class Course extends Model
         return Attribute::make(
             get: fn ($courses) => asset('/storage/courses/' . $courses),
         );
+    }
+
+    public function materials()
+    {
+        return $this->hasMany(Material::class);
     }
 }

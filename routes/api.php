@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
+use App\Http\Controllers\TrainerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -53,4 +54,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/faqs', [FaqController::class, 'store']);
     Route::put('/faqs/{faq}', [FaqController::class, 'update']);
     Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
+});
+
+Route::get('/trainers', [TrainerController::class, 'index']);
+Route::get('/starred-trainers', [TrainerController::class, 'starredTrainers']);
+Route::get('/trainers/{trainer}', [TrainerController::class, 'show']);
+Route::get('/trainers/qualification/{qualification}/{id}', [TrainerController::class, 'trainersWithSameQualification']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/trainers', [TrainerController::class, 'store']);
+    Route::put('/trainers/{trainer}', [TrainerController::class, 'update']);
+    Route::delete('/trainers/{trainer}', [TrainerController::class, 'destroy']);
+    Route::put('/trainers/{trainer}/toggle-starred', [TrainerController::class, 'toggleStarred']);
 });
