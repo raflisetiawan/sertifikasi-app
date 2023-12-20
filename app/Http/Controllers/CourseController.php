@@ -21,15 +21,6 @@ class CourseController extends Controller
         return new CourseResource(true, 'List Data Courses', $courses);
     }
 
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
     /**
      * Store a newly created resource in storage.
      */
@@ -41,10 +32,13 @@ class CourseController extends Controller
             'facility' => 'required|string',
             'price' => 'required|numeric',
             'place' => 'required|string',
-            'time' => 'required|string',
             'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Opsional, jika Anda mengizinkan gambar.
             'operational_start' => 'required|date', // Perbarui nama kolom
             'operational_end' => 'required|date',
+            'benefit' => 'required|string',
+            'guidelines' => 'required|file|max:20000',
+            'trainer_id' => 'required',
+            'duration' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -53,6 +47,8 @@ class CourseController extends Controller
 
         $image = $request->file('image');
         $image->storeAs('public/courses', $image->hashName());
+        $guidelines = $request->file('guidelines');
+        $guidelines->storeAs('public/courses/guideline', $guidelines->hashName());
 
         $course = Course::create([
             'name' => $request->name,
@@ -60,10 +56,13 @@ class CourseController extends Controller
             'image' => $image->hashName(),
             'price' => $request->price,
             'facility' => $request->facility,
+            'trainer_id' => $request->trainer_id,
             'place' => $request->place,
-            'time' => $request->time,
             'operational_start' => $request->operational_start, // Perbarui nama kolom
             'operational_end' => $request->operational_end,
+            'duration' => $request->duration,
+            'benefit' => $request->benefit, // Add this line
+            'guidelines' => $guidelines->hashName()
         ]);
 
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
@@ -74,18 +73,18 @@ class CourseController extends Controller
      */
     public function show(string $id)
     {
-        $course = Course::find($id);
+        $course = Course::with('trainer')->find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+        }
+
         return new CourseResource(true, 'Detail Data course!', $course);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Update the specified resource in storage.
      */
-    public function edit(string $id)
-    {
-        //
-    }
-
     /**
      * Update the specified resource in storage.
      */
@@ -97,9 +96,12 @@ class CourseController extends Controller
             'facility' => 'required|string',
             'price' => 'required|numeric',
             'place' => 'required|string',
-            'time' => 'required|string', // Opsional, jika Anda mengizinkan gambar.
-            'operational_start' => 'required|date', // Perbarui nama kolom
+            'operational_start' => 'required|date',
             'operational_end' => 'required|date',
+            'benefit' => 'required|string',
+            'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'guidelines' => 'file|max:20000', // Make guidelines optional
+            'trainer_id' => 'required'
         ]);
 
         if ($validator->fails()) {
@@ -111,54 +113,118 @@ class CourseController extends Controller
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
         }
 
+        // Hapus file gambar lama jika ada pembaruan pada file gambar
         if ($request->file('image')) {
             Storage::delete('public/courses/' . basename($course->image));
         }
 
-        $image = $request->file('image');
-
-        if ($image) {
-            $image = $request->file('image');
-            $image->storeAs('public/courses', $image->hashName());
-
-            $course->update([
-                'name' => $request->name,
-                'description' => $request->description,
-                'image' => $image->hashName(),
-                'price' => $request->price,
-                'facility' => $request->facility,
-                'place' => $request->place,
-                'time' => $request->time,
-                'operational_start' => $request->operational_start, // Perbarui nama kolom
-                'operational_end' => $request->operational_end,
-            ]);
-        } else {
-            $course->update([
-                'name' => $request->name,
-                'description' => $request->description,
-                'price' => $request->price,
-                'facility' => $request->facility,
-                'place' => $request->place,
-                'time' => $request->time,
-                'operational_start' => $request->operational_start, // Perbarui nama kolom
-                'operational_end' => $request->operational_end,
-            ]);
+        // Hapus file pedoman lama jika ada pembaruan pada file pedoman
+        if ($request->file('guidelines') && $course->guidelines) {
+            Storage::delete('public/courses/guideline/' . basename($course->guidelines));
         }
+
+        // Simpan file gambar baru
+        $image = $request->file('image');
+        if ($image) {
+            $image->storeAs('public/courses', $image->hashName());
+        }
+
+        // Simpan file pedoman baru jika ada
+        $guidelines = $request->file('guidelines');
+        if ($guidelines) {
+            $guidelines->storeAs('public/courses/guideline', $guidelines->hashName());
+        }
+
+        // Perbarui data kursus
+        $course->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'image' => $image ? $image->hashName() : $course->image,
+            'price' => $request->price,
+            'trainer_id' => $request->trainer_id,
+            'facility' => $request->facility,
+            'place' => $request->place,
+            'duration' => $request->duration,
+            'operational_start' => $request->operational_start,
+            'operational_end' => $request->operational_end,
+            'benefit' => $request->benefit,
+            'guidelines' => $guidelines ? $guidelines->hashName() : $course->guidelines,
+        ]);
+
         return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $course);
     }
-
     /**
      * Remove the specified resource from storage.
      */
     public function destroy($id)
     {
         $course = Course::findOrFail($id);
-        Storage::delete('public/courses/' . $course->image);
 
-        //delete course
+        // Hapus file gambar jika ada
+        if ($course->image) {
+            Storage::delete('public/courses/' . $course->image);
+        }
+
+        // Hapus file pedoman jika ada
+        if ($course->guidelines) {
+            Storage::delete('public/courses/guideline/' . $course->guidelines);
+        }
+
+        // Hapus entitas kursus
         $course->delete();
 
-        //return response
+        // Return response
         return new CourseResource(true, 'Data Course Berhasil Dihapus!', null);
+    }
+
+    /**
+     * Get related courses based on the given course ID.
+     *
+     * @param  string  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function relatedCourse(string $id)
+    {
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+        }
+
+        $relatedCourses = Course::where('id', '<>', $course->id)
+            ->where('trainer_id', '=', $course->trainer_id)->limit(4)
+            ->get();
+
+        // If no related courses found, fetch random courses
+        if ($relatedCourses->isEmpty()) {
+            $randomCourses = Course::inRandomOrder()->limit(4)->get();
+            return new CourseResource(true, 'Random Courses', $randomCourses);
+        }
+
+        return new CourseResource(true, 'Related Courses', $relatedCourses);
+    }
+
+    public function getCourseNameById(string $id)
+    {
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+        }
+
+        return response()->json(['course_name' => $course->name], 200);
+    }
+
+    public function getCourseWithMaterials(string $id)
+    {
+        $course = Course::with(['materials' => function ($query) use ($id) {
+            $query->where('course_id', $id);
+        }])->find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+        }
+
+        return new CourseResource(true, 'Detail Data course with materials!', $course);
     }
 }

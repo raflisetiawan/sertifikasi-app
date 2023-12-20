@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class Course extends Model
 {
     use HasFactory;
+
     protected $fillable = [
         'name',
         'trainer_id',
@@ -16,21 +17,23 @@ class Course extends Model
         'facility',
         'price',
         'place',
-        'time',
+        'duration',
         'image',
-        'operational_start', // Tambahkan kolom ini
+        'operational_start',
         'operational_end',
+        'benefit', // Tambah kolom ini
+        'guidelines', // Tambah kolom ini
     ];
 
-    protected function resume(): Attribute
-    {
-        return Attribute::make(
-            get: fn ($courses) => asset('/storage/courses/' . $courses),
-        );
-    }
+
 
     public function materials()
     {
         return $this->hasMany(Material::class);
+    }
+
+    public function trainer()
+    {
+        return $this->belongsTo(Trainer::class);
     }
 }

@@ -107,6 +107,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'phone_number' => $user->phone_number,
             'role' => $roleName, // Menambahkan nama peran
+            'email_verified_at' => $user->email_verified_at,
         ];
 
         return response()->json([
