@@ -227,4 +227,21 @@ class CourseController extends Controller
 
         return new CourseResource(true, 'Detail Data course with materials!', $course);
     }
+
+    public function getCourseTableWithZoomLink()
+    {
+        $course = Course::select(
+            'name',
+            'operational_start',
+            'operational_end',
+            'id',
+            'status',
+        )->with('zoomLink')->latest()->get();
+
+        if (!$course) {
+            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+        }
+
+        return response()->json(['data' => $course], 200);
+    }
 }

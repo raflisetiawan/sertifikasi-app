@@ -8,6 +8,7 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\ZoomLinkController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -83,7 +84,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/registration', [RegistrationController::class, 'store']);
     Route::get('/user/course/{id}', [RegistrationController::class, 'getUserCourses']);
+
     Route::get('/courses/{id}/with-materials', [CourseController::class, 'getCourseWithMaterials']);
+    Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
+
+    Route::post('/zoom-link', [ZoomLinkController::class, 'store']);
+    Route::patch('/zoom-link/{id}', [ZoomLinkController::class, 'update']);
+    Route::delete('/zoom-link/{id}', [ZoomLinkController::class, 'destroy']);
 });
 
 Route::get('/materials', [MaterialController::class, 'index']);
