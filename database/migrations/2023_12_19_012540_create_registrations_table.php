@@ -15,6 +15,8 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('user_id')->constrained()->onDelete('cascade')->index(); // Foreign key referencing users table with index and cascade deletion
             $table->unsignedBigInteger('course_id')->constrained()->onDelete('cascade')->index(); // Foreign key referencing courses table with index and cascade deletion
+            $table->string('payment_proof');
+            $table->boolean('verification')->default(false);
             $table->timestamps();
 
             $table->unique(['user_id', 'course_id']);

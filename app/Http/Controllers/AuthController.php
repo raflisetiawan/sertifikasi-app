@@ -33,6 +33,7 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
             'phone_number' => $request->phone_number,
         ]);
+        event(new Registered($user));
         event(new AssignUserRole($user));
 
         return response()->json([
