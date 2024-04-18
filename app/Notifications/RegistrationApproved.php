@@ -37,6 +37,7 @@ class RegistrationApproved extends Notification
     {
         return (new MailMessage)
         ->subject('Pendaftaran anda telah di setujui')
+        ->greeting('')
         ->line('Pendaftaran untuk kelas ' . $this->registration->course->name)
         ->action('Lihat Kelas', url(env('FRONT_URL') . 'my_profile/course/' .$this->registration->course->id))
         ->line('Terima kasih!');

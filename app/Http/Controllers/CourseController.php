@@ -244,4 +244,17 @@ class CourseController extends Controller
 
         return response()->json(['data' => $course], 200);
     }
+
+   /**
+     * Get all courses with only id and name columns.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function getIdAndNameCourse()
+    {
+        // Mengambil semua kelas dengan kolom id dan name saja
+        $courses = Course::select('id', 'name')->get();
+
+        return response()->json(['data' => $courses], 200);
+    }
 }

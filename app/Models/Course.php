@@ -23,6 +23,7 @@ class Course extends Model
         'operational_end',
         'benefit', // Tambah kolom ini
         'guidelines', // Tambah kolom ini
+        'status'
     ];
 
 

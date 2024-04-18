@@ -38,6 +38,7 @@ class RegistrationNotification extends Notification
     {
         return (new MailMessage)
             ->subject('Pendaftar baru')
+            ->greeting('Pendaftar baru dengan email ' . $this->registration->email)
             ->line('Seorang pengguna telah mendaftar kelas.')
             ->action('Lihat pendaftarannya', url(env('FRONT_URL') . 'admin/course-registrant/'. $this->registration->id))
             ->line('Terima kasih!');

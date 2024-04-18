@@ -55,6 +55,7 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
     Route::post('/materials', [MaterialController::class, 'store']);
     Route::patch('/materials/{material}', [MaterialController::class, 'update']);
     Route::delete('/materials/{material}', [MaterialController::class, 'destroy']);
+    Route::get('/materials/by-course/{courseId}', [MaterialController::class, 'getMaterialsByCourse']);
 
     Route::get('/course-registrant', [RegistrationController::class, 'index']);
     Route::get('/course-registrant/{registrationId}', [RegistrationController::class, 'detailRegistration']);
@@ -71,13 +72,14 @@ Route::middleware(['auth:sanctum'])->group(function() {
 
     Route::get('/materials', [MaterialController::class, 'index']);
     Route::get('/materials/{material}', [MaterialController::class, 'show']);
-    Route::get('/materials/by-course/{courseId}', [MaterialController::class, 'getMaterialsByCourse']);
+
 
     Route::post('/registration', [RegistrationController::class, 'store']);
     Route::get('/user/course/{id}', [RegistrationController::class, 'getUserCourses']);
 
     Route::get('/courses/{id}/with-materials', [CourseController::class, 'getCourseWithMaterials']);
     Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
+    Route::get('/courses/name-and-id', [CourseController::class, 'getIdAndNameCourse']);
 
 
     Route::get('/user-profile/{id}', [UserProfileController::class, 'show']);
