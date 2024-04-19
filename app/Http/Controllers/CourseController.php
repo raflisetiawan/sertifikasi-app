@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -217,15 +218,20 @@ class CourseController extends Controller
 
     public function getCourseWithMaterials(string $id)
     {
-        $course = Course::with(['materials' => function ($query) use ($id) {
-            $query->where('course_id', $id);
-        }])->find($id);
+        $course = Course::with(['materials' => function ($query) {
+            $query->select('title', 'file', 'course_id', 'description');
+        }])
+            ->select('id', 'name', 'description', 'facility', 'duration', 'status')
+            ->with(['zoomLink' => function ($query) {
+                $query->select('link', 'course_id');
+            }])
+            ->find($id);
 
         if (!$course) {
-            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
+            return response()->json(['message' => 'Data Course tidak ditemukan'], Response::HTTP_NOT_FOUND);
         }
 
-        return new CourseResource(true, 'Detail Data course with materials!', $course);
+        return response()->json(['data' => $course], Response::HTTP_OK);
     }
 
     public function getCourseTableWithZoomLink()
