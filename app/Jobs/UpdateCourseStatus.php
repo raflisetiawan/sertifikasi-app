@@ -28,7 +28,6 @@ class UpdateCourseStatus implements ShouldQueue
     public function handle(): void
     {
         $courses = Course::where('status', '!=', 'completed')->get();
-
         foreach ($courses as $course) {
             $now = now();
             $operationalStart = $course->operational_start;
