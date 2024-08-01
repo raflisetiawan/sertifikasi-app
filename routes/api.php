@@ -8,6 +8,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ResendEmailVerificationController;
 use App\Http\Controllers\ResetPasswordController;
@@ -105,3 +106,7 @@ Route::get('/trainers/qualification/{qualification}/{id}', [TrainerController::c
 
 Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
     ->middleware(['auth:sanctum', 'can:delete-contact,contact']);
+
+
+Route::post('/payments/create', [PaymentController::class, 'createTransaction']);
+Route::post('/payment/callback', [PaymentController::class, 'handleCallback']);

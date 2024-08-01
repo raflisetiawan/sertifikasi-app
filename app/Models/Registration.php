@@ -13,8 +13,10 @@ class Registration extends Model
     protected $fillable = [
         'user_id',
         'course_id',
-        'payment_proof',
-        'verification'
+        'payment_status',
+        'midtrans_order_id',
+        'transaction_id',
+        'payment_type'
     ];
 
     public function user(): BelongsTo

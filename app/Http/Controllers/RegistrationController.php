@@ -12,6 +12,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Midtrans\Snap;
+use Midtrans\Config as MidtransConfig;
 
 class RegistrationController extends Controller
 {
@@ -67,7 +69,7 @@ public function index(Request $request)
     return response()->json(['data' => $registrations], 200);
 }
 
-    /**
+   /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -106,7 +108,7 @@ public function index(Request $request)
             $payment_proof_image = $request->file('payment_proof');
             $payment_proof_image->storeAs('public/payment_proof_images', $payment_proof_image->hashName());
 
-            // Check if the user is already registered for the course
+            // Create a new registration
             $registration = Registration::create([
                 'user_id' => $request->user_id,
                 'course_id' => $request->course_id,
@@ -120,10 +122,10 @@ public function index(Request $request)
             $registration->email = $userEmail->email;
 
             // Send email notification to admin
-            $adminEmail = Config::get('mail.from.address');
+            $adminEmail = config('mail.from.address');
             Notification::route('mail', $adminEmail)->notify(new RegistrationNotification($registration));
 
-            return response()->json(['data' => $registration, 'message' => 'Registration created successfully'], 201);
+            return response()->json(['data' => $registration, 'message' => 'Registration created successfully', 'registration_id' => $registration->id], 201);
         } catch (\Exception $e) {
             // Rollback the transaction if an error occurs
             DB::rollBack();

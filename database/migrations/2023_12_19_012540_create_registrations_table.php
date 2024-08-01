@@ -13,16 +13,19 @@ return new class extends Migration
     {
         Schema::create('registrations', function (Blueprint $table) {
             $table->bigIncrements('id');
-            $table->unsignedBigInteger('user_id')->constrained()->onDelete('cascade')->index(); // Foreign key referencing users table with index and cascade deletion
-            $table->unsignedBigInteger('course_id')->constrained()->onDelete('cascade')->index(); // Foreign key referencing courses table with index and cascade deletion
-            $table->string('payment_proof');
+            $table->unsignedBigInteger('user_id')->constrained()->onDelete('cascade')->index();
+            $table->unsignedBigInteger('course_id')->constrained()->onDelete('cascade')->index();
+            $table->string('payment_proof')->nullable();
             $table->boolean('verification')->default(false);
+            $table->string('payment_status')->default('pending'); // Kolom untuk status pembayaran
+            $table->string('midtrans_order_id')->nullable(); // Kolom untuk order_id dari Midtrans
+            $table->string('transaction_id')->nullable(); // Kolom untuk transaction_id dari Midtrans
+            $table->string('payment_type')->nullable(); // Kolom untuk jenis pembayaran
             $table->timestamps();
 
             $table->unique(['user_id', 'course_id']);
         });
     }
-
     /**
      * Reverse the migrations.
      */
