@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -23,7 +22,8 @@ class Course extends Model
         'operational_end',
         'benefit', // Tambah kolom ini
         'guidelines', // Tambah kolom ini
-        'status'
+        'status',
+        'certificate_template_path'
     ];
 
 

@@ -44,6 +44,10 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
     Route::delete('/course/{id}', [CourseController::class, 'destroy']);
     Route::patch('/course/{id}', [CourseController::class, 'update']);
 
+    Route::patch('/course/updateStatus/{id}', [CourseController::class, 'editCourseStatus']);
+
+    Route::post('/course/{id}/upload-certificate', [CourseController::class, 'uploadCertificateTemplate']);
+
     Route::post('/faqs', [FaqController::class, 'store']);
     Route::put('/faqs/{faq}', [FaqController::class, 'update']);
     Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);

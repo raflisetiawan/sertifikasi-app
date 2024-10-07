@@ -6,6 +6,7 @@ use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -263,4 +264,57 @@ class CourseController extends Controller
 
         return response()->json(['data' => $courses], 200);
     }
+
+        public function editCourseStatus(Request $request, $id)
+        {
+            // Find the course by ID
+            $course = Course::find($id);
+
+            // Check if the course exists
+            if (!$course) {
+                return redirect()->route('courses.index')->with('error', 'Course not found');
+            }
+
+            // Validate the status input
+            $request->validate([
+                'status' => 'required|in:not_started,ongoing,completed'
+            ]);
+
+            // Update the course status
+            $course->status = $request->input('status');
+            $course->save();
+
+            return response()->json(['data' => $course], 200);
+        }
+
+        public function uploadCertificateTemplate(Request $request, $id)
+{
+    // Validasi input, pastikan file yang diupload adalah PDF
+    $validator = Validator::make($request->all(), [
+        'certificate_template' => 'required|file|mimes:pdf|max:10000' // Maksimal 10MB
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
+
+    // Temukan course berdasarkan ID
+    $course = Course::find($id);
+
+    if (!$course) {
+        return response()->json(['message' => 'Course tidak ditemukan'], 404);
+    }
+
+    // Simpan file PDF ke dalam storage (misalnya folder 'public/certificates')
+    $template = $request->file('certificate_template');
+    $template->storeAs('public/certificates', $template->hashName());
+
+    // Update course dengan path template sertifikat
+    $course->update([
+        'certificate_template_path' => $template->hashName()
+    ]);
+
+    return response()->json(['message' => 'Template sertifikat berhasil diupload!', 'data' => $course], 200);
+}
+
 }
