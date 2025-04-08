@@ -15,12 +15,14 @@ return new class extends Migration
             $table->bigIncrements('id');
             $table->unsignedBigInteger('user_id')->constrained()->onDelete('cascade')->index();
             $table->unsignedBigInteger('course_id')->constrained()->onDelete('cascade')->index();
-            $table->string('payment_proof')->nullable();
             $table->boolean('verification')->default(false);
-            $table->string('payment_status')->default('pending'); // Kolom untuk status pembayaran
-            $table->string('midtrans_order_id')->nullable(); // Kolom untuk order_id dari Midtrans
-            $table->string('transaction_id')->nullable(); // Kolom untuk transaction_id dari Midtrans
-            $table->string('payment_type')->nullable(); // Kolom untuk jenis pembayaran
+            $table->string('payment_status')->default('pending');
+            $table->string('midtrans_order_id')->nullable();
+            $table->string('transaction_id')->nullable();
+            $table->string('payment_type')->nullable();
+            $table->string('transaction_time')->nullable();
+            $table->decimal('gross_amount', 15, 2)->nullable();
+            $table->string('fraud_status')->nullable();
             $table->timestamps();
 
             $table->unique(['user_id', 'course_id']);

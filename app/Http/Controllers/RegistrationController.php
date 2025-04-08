@@ -17,59 +17,59 @@ use Midtrans\Config as MidtransConfig;
 
 class RegistrationController extends Controller
 {
- /**
- * Display a listing of the resource.
- *
- * @return \Illuminate\Http\Response
- */
-public function index(Request $request)
-{
-    // Ambil query parameters jika ada
-    $courseId = $request->input('course_id');
-    $date = $request->input('date');
-    $verification = $request->input('verification'); // Filter default ke belum terverifikasi
-    $userEmail = $request->input('user_email'); // Email pengguna
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        // Ambil query parameters jika ada
+        $courseId = $request->input('course_id');
+        $date = $request->input('date');
+        $verification = $request->input('verification'); // Filter default ke belum terverifikasi
+        $userEmail = $request->input('user_email'); // Email pengguna
 
-    // Query untuk mendapatkan pendaftar kelas
-    $query = Registration::with(['user:id,email', 'course:id,name']);
+        // Query untuk mendapatkan pendaftar kelas
+        $query = Registration::with(['user:id,email', 'course:id,name']);
 
-    // Filter berdasarkan course_id jika disertakan
-    if ($courseId) {
-        $query->where('course_id', $courseId);
-    }
+        // Filter berdasarkan course_id jika disertakan
+        if ($courseId) {
+            $query->where('course_id', $courseId);
+        }
 
-    // Filter berdasarkan tanggal jika disertakan
-    if ($date) {
-        $query->whereDate('created_at', $date);
-    }
+        // Filter berdasarkan tanggal jika disertakan
+        if ($date) {
+            $query->whereDate('created_at', $date);
+        }
 
-    // Filter berdasarkan verifikasi
-    if ($verification !== null) {
-        // Cast $verification to boolean explicitly
-        $verification = filter_var($verification, FILTER_VALIDATE_BOOLEAN);
-        $query->where('verification', $verification);
-    }
+        // Filter berdasarkan verifikasi
+        if ($verification !== null) {
+            // Cast $verification to boolean explicitly
+            $verification = filter_var($verification, FILTER_VALIDATE_BOOLEAN);
+            $query->where('verification', $verification);
+        }
 
-    // Filter berdasarkan email pengguna
-    if ($userEmail) {
-        $query->whereHas('user', function ($q) use ($userEmail) {
-            $q->where('email', 'like', "%$userEmail%");
+        // Filter berdasarkan email pengguna
+        if ($userEmail) {
+            $query->whereHas('user', function ($q) use ($userEmail) {
+                $q->where('email', 'like', "%$userEmail%");
+            });
+        }
+
+        // Ambil data pendaftar kelas
+        $registrations = $query->get(['id', 'user_id', 'course_id', 'verification']);
+
+        // Ubah nilai verifikasi dari angka (0/1) menjadi boolean (true/false)
+        $registrations->transform(function ($registration) {
+            $registration->verification = (bool) $registration->verification;
+            return $registration;
         });
+
+        return response()->json(['data' => $registrations], 200);
     }
 
-    // Ambil data pendaftar kelas
-    $registrations = $query->get(['id', 'user_id', 'course_id', 'verification']);
-
-    // Ubah nilai verifikasi dari angka (0/1) menjadi boolean (true/false)
-    $registrations->transform(function ($registration) {
-        $registration->verification = (bool) $registration->verification;
-        return $registration;
-    });
-
-    return response()->json(['data' => $registrations], 200);
-}
-
-   /**
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -77,17 +77,11 @@ public function index(Request $request)
      */
     public function store(Request $request)
     {
-        $errorMessagesOfPaymentProof = [
-            'payment_proof.required' => 'Silakan unggah bukti pembayaran.',
-            'payment_proof.image' => 'Bukti pembayaran harus berupa file gambar.',
-            'payment_proof.max' => 'Ukuran bukti pembayaran tidak boleh melebihi 10 MB.'
-        ];
 
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'course_id' => 'required|exists:courses,id',
-            'payment_proof' => 'required|image|max:10000'
-        ], $errorMessagesOfPaymentProof);
+        ]);
 
         $userId = $request->user_id;
         $courseId = $request->course_id;
@@ -105,14 +99,10 @@ public function index(Request $request)
             // Use transactions to ensure atomicity of database operations
             DB::beginTransaction();
 
-            $payment_proof_image = $request->file('payment_proof');
-            $payment_proof_image->storeAs('public/payment_proof_images', $payment_proof_image->hashName());
-
             // Create a new registration
             $registration = Registration::create([
                 'user_id' => $request->user_id,
                 'course_id' => $request->course_id,
-                'payment_proof' => $request->payment_proof->hashName(),
             ]);
 
             // Commit the transaction if all operations are successful
@@ -134,44 +124,44 @@ public function index(Request $request)
         }
     }
 
-   /**
- * Get the courses registered by a specific user.
- *
- * @param  int  $userId
- * @return \Illuminate\Http\Response
- */
-public function getUserCourses($userId)
-{
-    // Retrieve the registrations for the given user ID
-    $registrations = Registration::with('course:id,name,image,place,operational_start,status,guidelines')
-        ->where('user_id', $userId)
-        ->get(['course_id', 'verification']);
+    /**
+     * Get the courses registered by a specific user.
+     *
+     * @param  int  $userId
+     * @return \Illuminate\Http\Response
+     */
+    public function getUserCourses($userId)
+    {
+        // Retrieve the registrations for the given user ID
+        $registrations = Registration::with('course:id,name,image,place,operational_start,status,guidelines')
+            ->where('user_id', $userId)
+            ->get(['course_id', 'verification']);
 
-    if ($registrations->isEmpty()) {
-        return response()->json(['message' => 'Anda belum mendaftar kelas'], Response::HTTP_NOT_FOUND);
-    }
+        if ($registrations->isEmpty()) {
+            return response()->json(['message' => 'Anda belum mendaftar kelas'], Response::HTTP_NOT_FOUND);
+        }
 
-    // Extract the course IDs from registrations
-    $courseIds = $registrations->pluck('course_id');
+        // Extract the course IDs from registrations
+        $courseIds = $registrations->pluck('course_id');
 
-    // Retrieve the courses based on the course IDs
-    $courses = Course::WhereIn('id', $courseIds)
-        ->get(['id', 'name', 'operational_start', 'image', 'place', 'status', 'guidelines']);
+        // Retrieve the courses based on the course IDs
+        $courses = Course::WhereIn('id', $courseIds)
+            ->get(['id', 'name', 'operational_start', 'image', 'place', 'status', 'guidelines']);
 
-    // Append verification status to each course
-    $courses->each(function ($course) use ($registrations) {
-        $registration = $registrations->where('course_id', $course->id)->first();
-        $registrations->transform(function ($registration) {
-            $registration->verification = (bool) $registration->verification;
-            return $registration;
+        // Append verification status to each course
+        $courses->each(function ($course) use ($registrations) {
+            $registration = $registrations->where('course_id', $course->id)->first();
+            $registrations->transform(function ($registration) {
+                $registration->verification = (bool) $registration->verification;
+                return $registration;
+            });
+            $course->verification = $registration->verification;
+            $course->image = asset('/storage/courses/' . $course->image);
+            $course->guidelines = asset('/storage/courses/guideline/' . $course->guidelines);
         });
-        $course->verification = $registration->verification;
-        $course->image = asset('/storage/courses/' . $course->image);
-        $course->guidelines = asset('/storage/courses/guideline/' . $course->guidelines);
-    });
 
-    return response()->json(['data' => $courses], Response::HTTP_OK);
-}
+        return response()->json(['data' => $courses], Response::HTTP_OK);
+    }
     /**
      * Approve a registration.
      *
@@ -211,7 +201,7 @@ public function getUserCourses($userId)
         return response()->json(['message' => 'Registration approved successfully'], 200);
     }
 
-      /**
+    /**
      * Get detailed information about a registration.
      *
      * @param  int  $registrationId
@@ -225,10 +215,6 @@ public function getUserCourses($userId)
         if (!$registration) {
             return response()->json(['message' => 'Registration not found'], 404);
         }
-        // $registration->transform(function ($registration) {
-        //     $registration->verification = (bool) $registration->verification;
-        //     return $registration;
-        // });
 
         // Dapatkan detail pengguna, kelas, dan harga kelas
         $userEmail = $registration->user->email;

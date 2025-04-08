@@ -11,8 +11,8 @@ class Course extends Model
 
     protected $fillable = [
         'name',
-        'trainer_id',
         'description',
+        'key_concepts',
         'facility',
         'price',
         'place',
@@ -20,10 +20,13 @@ class Course extends Model
         'image',
         'operational_start',
         'operational_end',
-        'benefit', // Tambah kolom ini
-        'guidelines', // Tambah kolom ini
         'status',
-        'certificate_template_path'
+        'benefit',
+        'guidelines',
+        'syllabus_path',
+        'certificate_example_path',
+        'certificate_template_path',
+        'schedule_path'
     ];
 
 
@@ -33,13 +36,18 @@ class Course extends Model
         return $this->hasMany(Material::class);
     }
 
-    public function trainer()
+    public function trainers()
     {
-        return $this->belongsTo(Trainer::class);
+        return $this->belongsToMany(Trainer::class, 'course_trainer');
     }
 
     public function zoomLink()
     {
         return $this->hasOne(CourseZoomLink::class);
+    }
+
+    public function modules()
+    {
+        return $this->hasMany(Module::class)->orderBy('order');
     }
 }

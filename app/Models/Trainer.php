@@ -14,12 +14,12 @@ class Trainer extends Model
     protected function getTrainerProfile(): Attribute
     {
         return Attribute::make(
-            get: fn ($profiles) => asset('/storage/trainers/profiles' . $profiles),
+            get: fn($profiles) => asset('/storage/trainers/profiles' . $profiles),
         );
     }
 
     public function courses()
     {
-        return $this->hasMany(Course::class);
+        return $this->belongsToMany(Course::class, 'course_trainer');
     }
 }

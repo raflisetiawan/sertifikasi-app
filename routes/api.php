@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CodeCheckController;
@@ -39,40 +40,11 @@ Route::post('/email/verify/resend', [ResendEmailVerificationController::class, '
     ->name('verification.send');
 
 // Routes that require admin authentication
-Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function () {
-    Route::post('/course', [CourseController::class, 'store']);
-    Route::delete('/course/{id}', [CourseController::class, 'destroy']);
-    Route::patch('/course/{id}', [CourseController::class, 'update']);
-
-    Route::patch('/course/updateStatus/{id}', [CourseController::class, 'editCourseStatus']);
-
-    Route::post('/course/{id}/upload-certificate', [CourseController::class, 'uploadCertificateTemplate']);
-
-    Route::post('/faqs', [FaqController::class, 'store']);
-    Route::put('/faqs/{faq}', [FaqController::class, 'update']);
-    Route::delete('/faqs/{faq}', [FaqController::class, 'destroy']);
-
-    Route::post('/trainers', [TrainerController::class, 'store']);
-    Route::put('/trainers/{trainer}', [TrainerController::class, 'update']);
-    Route::delete('/trainers/{trainer}', [TrainerController::class, 'destroy']);
-    Route::put('/trainers/{trainer}/toggle-starred', [TrainerController::class, 'toggleStarred']);
-
-    Route::post('/materials', [MaterialController::class, 'store']);
-    Route::patch('/materials/{material}', [MaterialController::class, 'update']);
-    Route::delete('/materials/{material}', [MaterialController::class, 'destroy']);
-    Route::get('/materials/by-course/{courseId}', [MaterialController::class, 'getMaterialsByCourse']);
-
-    Route::get('/course-registrant', [RegistrationController::class, 'index']);
-    Route::get('/course-registrant/{registrationId}', [RegistrationController::class, 'detailRegistration']);
-    Route::post('/course-registrant/approve/{registrationId}', [RegistrationController::class, 'approveRegistration']);
-
-    Route::post('/zoom-link', [ZoomLinkController::class, 'store']);
-    Route::patch('/zoom-link/{id}', [ZoomLinkController::class, 'update']);
-    Route::delete('/zoom-link/{id}', [ZoomLinkController::class, 'destroy']);
-});
+Route::middleware(['auth:sanctum', AdminMiddleware::class])
+    ->group(base_path('routes/admin/api.php'));
 
 // Routes that require authentication
-Route::middleware(['auth:sanctum'])->group(function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'getUserWithRole']);
 
     Route::get('/materials', [MaterialController::class, 'index']);
@@ -90,7 +62,11 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::get('/user-profile/{id}', [UserProfileController::class, 'show']);
     Route::patch('/user-profile/{id}', [UserProfileController::class, 'update']);
     Route::delete('/user-profile/{id}/remove-image', [UserProfileController::class, 'removeImage']);
+
+    Route::post('/payments/create', [PaymentController::class, 'createTransaction']);
+    Route::post('payments/update-status', [PaymentController::class, 'updatePaymentStatus']);
 });
+Route::post('/payments/callback', [PaymentController::class, 'handleCallback']);
 
 // Routes that do not require authentication
 Route::apiResource('contacts', ContactController::class)->except(['destroy']);
@@ -110,7 +86,3 @@ Route::get('/trainers/qualification/{qualification}/{id}', [TrainerController::c
 
 Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
     ->middleware(['auth:sanctum', 'can:delete-contact,contact']);
-
-
-Route::post('/payments/create', [PaymentController::class, 'createTransaction']);
-Route::post('/payment/callback', [PaymentController::class, 'handleCallback']);

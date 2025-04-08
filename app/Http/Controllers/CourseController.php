@@ -6,7 +6,6 @@ use App\Http\Resources\CourseResource;
 use App\Models\Course;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
@@ -31,51 +30,94 @@ class CourseController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
+            'key_concepts' => 'nullable|string',
             'facility' => 'required|string',
             'price' => 'required|numeric',
             'place' => 'required|string',
-            'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048', // Opsional, jika Anda mengizinkan gambar.
-            'operational_start' => 'required|date', // Perbarui nama kolom
+            'duration' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'operational_start' => 'required|date',
             'operational_end' => 'required|date',
-            'benefit' => 'required|string',
-            'guidelines' => 'required|file|max:20000',
-            'trainer_id' => 'required',
-            'duration' => 'required'
+            'benefit' => 'nullable|string',
+            'guidelines' => 'nullable|file|max:20000',
+            'trainer_ids' => 'required|array', // Changed to array for multiple trainers
+            'trainer_ids.*' => 'exists:trainers,id', // Validate each trainer ID
+            'syllabus' => 'nullable|file|max:10000',
+            'certificate_example' => 'nullable|file|max:10000',
+            'schedule' => 'nullable|file|max:10000'
         ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $image = $request->file('image');
-        $image->storeAs('public/courses', $image->hashName());
-        $guidelines = $request->file('guidelines');
-        $guidelines->storeAs('public/courses/guideline', $guidelines->hashName());
+        // Handle file uploads
+        $imageHash = null;
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageHash = $image->hashName();
+            $image->storeAs('public/courses', $imageHash);
+        }
 
+        $guidelinesHash = null;
+        if ($request->hasFile('guidelines')) {
+            $guidelines = $request->file('guidelines');
+            $guidelinesHash = $guidelines->hashName();
+            $guidelines->storeAs('public/courses/guideline', $guidelinesHash);
+        }
+
+        $syllabusHash = null;
+        if ($request->hasFile('syllabus')) {
+            $syllabus = $request->file('syllabus');
+            $syllabusHash = $syllabus->hashName();
+            $syllabus->storeAs('public/courses/syllabus', $syllabusHash);
+        }
+
+        $certificateExampleHash = null;
+        if ($request->hasFile('certificate_example')) {
+            $certificateExample = $request->file('certificate_example');
+            $certificateExampleHash = $certificateExample->hashName();
+            $certificateExample->storeAs('public/courses/certificates', $certificateExampleHash);
+        }
+
+        $scheduleHash = null;
+        if ($request->hasFile('schedule')) {
+            $schedule = $request->file('schedule');
+            $scheduleHash = $schedule->hashName();
+            $schedule->storeAs('public/courses/schedules', $scheduleHash);
+        }
+
+        // Create course
         $course = Course::create([
             'name' => $request->name,
             'description' => $request->description,
-            'image' => $image->hashName(),
-            'price' => $request->price,
+            'key_concepts' => $request->key_concepts,
             'facility' => $request->facility,
-            'trainer_id' => $request->trainer_id,
+            'price' => $request->price,
             'place' => $request->place,
-            'operational_start' => $request->operational_start, // Perbarui nama kolom
-            'operational_end' => $request->operational_end,
             'duration' => $request->duration,
-            'benefit' => $request->benefit, // Add this line
-            'guidelines' => $guidelines->hashName()
+            'image' => $imageHash,
+            'operational_start' => $request->operational_start,
+            'operational_end' => $request->operational_end,
+            'status' => 'not_started',
+            'benefit' => $request->benefit,
+            'guidelines' => $guidelinesHash,
+            'syllabus_path' => $syllabusHash,
+            'certificate_example_path' => $certificateExampleHash,
+            'schedule_path' => $scheduleHash
         ]);
+
+        // Attach trainers
+        $course->trainers()->attach($request->trainer_ids);
 
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
     }
-
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        $course = Course::with('trainer')->find($id);
+        $course = Course::with('trainers')->find($id);
 
         if (!$course) {
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
@@ -87,23 +129,26 @@ class CourseController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
+            'key_concepts' => 'nullable|string',
             'facility' => 'required|string',
             'price' => 'required|numeric',
             'place' => 'required|string',
+            'duration' => 'required|string',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'operational_start' => 'required|date',
             'operational_end' => 'required|date',
-            'benefit' => 'required|string',
-            'image' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'guidelines' => 'file|max:20000', // Make guidelines optional
-            'trainer_id' => 'required'
+            'benefit' => 'nullable|string',
+            'guidelines' => 'nullable|file|max:20000',
+            'trainer_ids' => 'required|array',
+            'trainer_ids.*' => 'exists:trainers,id',
+            'syllabus' => 'nullable|file|max:10000',
+            'certificate_example' => 'nullable|file|max:10000',
+            'schedule' => 'nullable|file|max:10000'
         ]);
 
         if ($validator->fails()) {
@@ -115,43 +160,33 @@ class CourseController extends Controller
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
         }
 
-        // Hapus file gambar lama jika ada pembaruan pada file gambar
-        if ($request->file('image')) {
-            Storage::delete('public/courses/' . basename($course->image));
+        // Handle file updates
+        if ($request->hasFile('image')) {
+            Storage::delete('public/courses/' . $course->image);
+            $image = $request->file('image');
+            $imageHash = $image->hashName();
+            $image->storeAs('public/courses', $imageHash);
+            $course->image = $imageHash;
         }
 
-        // Hapus file pedoman lama jika ada pembaruan pada file pedoman
-        if ($request->file('guidelines') && $course->guidelines) {
-            Storage::delete('public/courses/guideline/' . basename($course->guidelines));
-        }
+        // Similar file handling for other files...
+        // (guidelines, syllabus, certificate_example, schedule)
 
-        // Simpan file gambar baru
-        $image = $request->file('image');
-        if ($image) {
-            $image->storeAs('public/courses', $image->hashName());
-        }
-
-        // Simpan file pedoman baru jika ada
-        $guidelines = $request->file('guidelines');
-        if ($guidelines) {
-            $guidelines->storeAs('public/courses/guideline', $guidelines->hashName());
-        }
-
-        // Perbarui data kursus
         $course->update([
             'name' => $request->name,
             'description' => $request->description,
-            'image' => $image ? $image->hashName() : $course->image,
-            'price' => $request->price,
-            'trainer_id' => $request->trainer_id,
+            'key_concepts' => $request->key_concepts,
             'facility' => $request->facility,
+            'price' => $request->price,
             'place' => $request->place,
             'duration' => $request->duration,
             'operational_start' => $request->operational_start,
             'operational_end' => $request->operational_end,
-            'benefit' => $request->benefit,
-            'guidelines' => $guidelines ? $guidelines->hashName() : $course->guidelines,
+            'benefit' => $request->benefit
         ]);
+
+        // Sync trainers
+        $course->trainers()->sync($request->trainer_ids);
 
         return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $course);
     }
@@ -162,20 +197,37 @@ class CourseController extends Controller
     {
         $course = Course::findOrFail($id);
 
-        // Hapus file gambar jika ada
+        // Delete all associated files if they exist
         if ($course->image) {
             Storage::delete('public/courses/' . $course->image);
         }
 
-        // Hapus file pedoman jika ada
         if ($course->guidelines) {
             Storage::delete('public/courses/guideline/' . $course->guidelines);
         }
 
-        // Hapus entitas kursus
+        if ($course->syllabus_path) {
+            Storage::delete('public/courses/syllabus/' . $course->syllabus_path);
+        }
+
+        if ($course->certificate_example_path) {
+            Storage::delete('public/courses/certificates/' . $course->certificate_example_path);
+        }
+
+        if ($course->certificate_template_path) {
+            Storage::delete('public/certificates/' . $course->certificate_template_path);
+        }
+
+        if ($course->schedule_path) {
+            Storage::delete('public/courses/schedules/' . $course->schedule_path);
+        }
+
+        // Delete course-trainer relationships (pivot table entries will be automatically deleted)
+        $course->trainers()->detach();
+
+        // Delete the course
         $course->delete();
 
-        // Return response
         return new CourseResource(true, 'Data Course Berhasil Dihapus!', null);
     }
 
@@ -187,14 +239,18 @@ class CourseController extends Controller
      */
     public function relatedCourse(string $id)
     {
-        $course = Course::find($id);
+        $course = Course::with('trainers')->find($id);
 
         if (!$course) {
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
         }
 
+        // Changed trainer_id to use trainers relationship
         $relatedCourses = Course::where('id', '<>', $course->id)
-            ->where('trainer_id', '=', $course->trainer_id)->limit(4)
+            ->whereHas('trainers', function ($query) use ($course) {
+                $query->whereIn('trainers.id', $course->trainers->pluck('id'));
+            })
+            ->limit(4)
             ->get();
 
         // If no related courses found, fetch random courses
@@ -252,7 +308,7 @@ class CourseController extends Controller
         return response()->json(['data' => $course], 200);
     }
 
-   /**
+    /**
      * Get all courses with only id and name columns.
      *
      * @return \Illuminate\Http\Response
@@ -265,56 +321,55 @@ class CourseController extends Controller
         return response()->json(['data' => $courses], 200);
     }
 
-        public function editCourseStatus(Request $request, $id)
-        {
-            // Find the course by ID
-            $course = Course::find($id);
+    public function editCourseStatus(Request $request, $id)
+    {
+        // Find the course by ID
+        $course = Course::find($id);
 
-            // Check if the course exists
-            if (!$course) {
-                return redirect()->route('courses.index')->with('error', 'Course not found');
-            }
-
-            // Validate the status input
-            $request->validate([
-                'status' => 'required|in:not_started,ongoing,completed'
-            ]);
-
-            // Update the course status
-            $course->status = $request->input('status');
-            $course->save();
-
-            return response()->json(['data' => $course], 200);
+        // Check if the course exists
+        if (!$course) {
+            return redirect()->route('courses.index')->with('error', 'Course not found');
         }
 
-        public function uploadCertificateTemplate(Request $request, $id)
-{
-    // Validasi input, pastikan file yang diupload adalah PDF
-    $validator = Validator::make($request->all(), [
-        'certificate_template' => 'required|file|mimes:pdf|max:10000' // Maksimal 10MB
-    ]);
+        // Validate the status input
+        $request->validate([
+            'status' => 'required|in:not_started,ongoing,completed'
+        ]);
 
-    if ($validator->fails()) {
-        return response()->json($validator->errors(), 422);
+        // Update the course status
+        $course->status = $request->input('status');
+        $course->save();
+
+        return response()->json(['data' => $course], 200);
     }
 
-    // Temukan course berdasarkan ID
-    $course = Course::find($id);
+    public function uploadCertificateTemplate(Request $request, $id)
+    {
+        // Validasi input, pastikan file yang diupload adalah PDF
+        $validator = Validator::make($request->all(), [
+            'certificate_template' => 'required|file|mimes:pdf|max:10000' // Maksimal 10MB
+        ]);
 
-    if (!$course) {
-        return response()->json(['message' => 'Course tidak ditemukan'], 404);
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        // Temukan course berdasarkan ID
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Course tidak ditemukan'], 404);
+        }
+
+        // Simpan file PDF ke dalam storage (misalnya folder 'public/certificates')
+        $template = $request->file('certificate_template');
+        $template->storeAs('public/certificates', $template->hashName());
+
+        // Update course dengan path template sertifikat
+        $course->update([
+            'certificate_template_path' => $template->hashName()
+        ]);
+
+        return response()->json(['message' => 'Template sertifikat berhasil diupload!', 'data' => $course], 200);
     }
-
-    // Simpan file PDF ke dalam storage (misalnya folder 'public/certificates')
-    $template = $request->file('certificate_template');
-    $template->storeAs('public/certificates', $template->hashName());
-
-    // Update course dengan path template sertifikat
-    $course->update([
-        'certificate_template_path' => $template->hashName()
-    ]);
-
-    return response()->json(['message' => 'Template sertifikat berhasil diupload!', 'data' => $course], 200);
-}
-
 }

@@ -16,7 +16,11 @@ class Registration extends Model
         'payment_status',
         'midtrans_order_id',
         'transaction_id',
-        'payment_type'
+        'payment_type',
+        'transaction_time',
+        'gross_amount',
+        'fraud_status',
+        'verification'
     ];
 
     public function user(): BelongsTo
