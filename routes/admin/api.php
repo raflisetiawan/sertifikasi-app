@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CourseBenefitController;
 use App\Http\Controllers\Admin\ModuleConceptManagementController;
 use App\Http\Controllers\Admin\ModuleExerciseManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
@@ -59,3 +60,6 @@ Route::get('module-exercises/{id}', [ModuleExerciseManagementController::class, 
 Route::put('module-exercises/{id}', [ModuleExerciseManagementController::class, 'update']);
 Route::delete('module-exercises/{id}', [ModuleExerciseManagementController::class, 'destroy']);
 Route::post('module-exercises/reorder', [ModuleExerciseManagementController::class, 'reorder']);
+
+Route::resource('course_benefits', CourseBenefitController::class);
+Route::get('course/{courseId}/course_benefits', [CourseBenefitController::class, 'getByCourse']);

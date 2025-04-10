@@ -74,6 +74,7 @@ Route::get('/course', [CourseController::class, 'index']);
 Route::get('courses/name/{id}', [CourseController::class, 'getCourseNameById']);
 Route::get('/course/{id}', [CourseController::class, 'show']);
 Route::get('courses/{id}/related', [CourseController::class, 'relatedCourse']);
+Route::get('/course/{id}/with-modules', [CourseController::class, 'getCourseWithModules']);
 
 Route::get('/faqs', [FaqController::class, 'index']);
 Route::get('/faqs/{faq}', [FaqController::class, 'show']);

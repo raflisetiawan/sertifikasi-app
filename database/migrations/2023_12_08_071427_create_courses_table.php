@@ -27,8 +27,6 @@
                 $table->text('benefit')->nullable(); // Kolom benefit (opsional)
                 $table->text('guidelines')->nullable(); // Kolom pedoman (opsional)
                 $table->string('syllabus_path')->nullable();
-                $table->string('certificate_example_path')->nullable();
-                $table->string('certificate_template_path')->nullable();
                 $table->string('schedule_path')->nullable();
                 $table->timestamps();
             });

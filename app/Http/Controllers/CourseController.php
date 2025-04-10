@@ -372,4 +372,69 @@ class CourseController extends Controller
 
         return response()->json(['message' => 'Template sertifikat berhasil diupload!', 'data' => $course], 200);
     }
+
+    /**
+     * Get course with its modules, concepts, and exercises
+     *
+     * @param string $id
+     * @return \Illuminate\Http\Response
+     */
+    public function getCourseWithModules(string $id)
+    {
+        $course = Course::with(['modules' => function ($query) {
+            $query->orderBy('order')
+                ->with(['concepts' => function ($q) {
+                    $q->orderBy('order');
+                }, 'exercises' => function ($q) {
+                    $q->orderBy('order');
+                }]);
+        }])->find($id);
+
+        if (!$course) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data Course tidak ditemukan'
+            ], 404);
+        }
+
+        // Transform the data to be more structured
+        $transformedData = [
+            'id' => $course->id,
+            'name' => $course->name,
+            'description' => $course->description,
+            'status' => $course->status,
+            'modules' => $course->modules->map(function ($module) {
+                return [
+                    'id' => $module->id,
+                    'title' => $module->title,
+                    'subtitle' => $module->subtitle,
+                    'description' => $module->description,
+                    'type' => $module->type,
+                    'order' => $module->order,
+                    'estimated_time_min' => $module->estimated_time_min,
+                    'thumbnail_url' => $module->thumbnail_url,
+                    'concepts' => $module->concepts->map(function ($concept) {
+                        return [
+                            'id' => $concept->id,
+                            'title' => $concept->title,
+                            'order' => $concept->order
+                        ];
+                    }),
+                    'exercises' => $module->exercises->map(function ($exercise) {
+                        return [
+                            'id' => $exercise->id,
+                            'description' => $exercise->description,
+                            'order' => $exercise->order
+                        ];
+                    })
+                ];
+            })
+        ];
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail Course dengan Modul berhasil dimuat',
+            'data' => $transformedData
+        ]);
+    }
 }
