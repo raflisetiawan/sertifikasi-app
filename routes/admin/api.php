@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Admin\AssignmentManagementController;
 use App\Http\Controllers\Admin\CourseBenefitController;
 use App\Http\Controllers\Admin\ModuleConceptManagementController;
+use App\Http\Controllers\Admin\ModuleContentManagementController;
 use App\Http\Controllers\Admin\ModuleExerciseManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
+use App\Http\Controllers\Admin\QuizManagementController;
+use App\Http\Controllers\Admin\TextManagementController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MaterialController;
@@ -62,4 +66,36 @@ Route::delete('module-exercises/{id}', [ModuleExerciseManagementController::clas
 Route::post('module-exercises/reorder', [ModuleExerciseManagementController::class, 'reorder']);
 
 Route::resource('course_benefits', CourseBenefitController::class);
-Route::get('course/{courseId}/course_benefits', [CourseBenefitController::class, 'getByCourse']);
+
+Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
+    Route::get('modules/{module}/contents', [ModuleContentManagementController::class, 'index']);
+    Route::post('modules/{module}/contents', [ModuleContentManagementController::class, 'store']);
+    Route::get('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'show']);
+    Route::put('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'update']);
+    Route::delete('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'destroy']);
+    Route::post('modules/{module}/contents/reorder', [ModuleContentManagementController::class, 'reorder']);
+
+    Route::group(['prefix' => 'texts'], function () {
+        Route::get('/', [TextManagementController::class, 'index']);
+        Route::post('/', [TextManagementController::class, 'store']);
+        Route::get('/{id}', [TextManagementController::class, 'show']);
+        Route::put('/{id}', [TextManagementController::class, 'update']);
+        Route::delete('/{id}', [TextManagementController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'quizzes'], function () {
+        Route::get('/', [QuizManagementController::class, 'index']);
+        Route::post('/', [QuizManagementController::class, 'store']);
+        Route::get('/{id}', [QuizManagementController::class, 'show']);
+        Route::put('/{id}', [QuizManagementController::class, 'update']);
+        Route::delete('/{id}', [QuizManagementController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'assignments'], function () {
+        Route::get('/', [AssignmentManagementController::class, 'index']);
+        Route::post('/', [AssignmentManagementController::class, 'store']);
+        Route::get('/{id}', [AssignmentManagementController::class, 'show']);
+        Route::put('/{id}', [AssignmentManagementController::class, 'update']);
+        Route::delete('/{id}', [AssignmentManagementController::class, 'destroy']);
+    });
+});

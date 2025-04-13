@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CourseBenefitController;
 use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChangePasswordController;
@@ -87,3 +88,5 @@ Route::get('/trainers/qualification/{qualification}/{id}', [TrainerController::c
 
 Route::delete('contacts/{contact}', [ContactController::class, 'destroy'])
     ->middleware(['auth:sanctum', 'can:delete-contact,contact']);
+
+Route::get('course/{courseId}/course_benefits', [CourseBenefitController::class, 'getByCourse']);

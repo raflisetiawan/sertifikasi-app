@@ -45,4 +45,9 @@ class Module extends Model
     {
         return $this->hasMany(ModuleExercise::class)->orderBy('order');
     }
+
+    public function contents()
+    {
+        return $this->hasMany(ModuleContent::class)->orderBy('order');
+    }
 }
