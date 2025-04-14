@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\File;
 use App\Models\Quiz;
 use App\Models\Text;
+use App\Models\Video;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,7 +26,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void {
         Relation::morphMap([
             'text' => Text::class,
-            // 'video' => Video::class,
+            'video' => Video::class,
             'quiz' => Quiz::class,
             'assignment' => Assignment::class,
             'file' => File::class,

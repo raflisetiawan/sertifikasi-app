@@ -2,12 +2,14 @@
 
 use App\Http\Controllers\Admin\AssignmentManagementController;
 use App\Http\Controllers\Admin\CourseBenefitController;
+use App\Http\Controllers\Admin\FileManagementController;
 use App\Http\Controllers\Admin\ModuleConceptManagementController;
 use App\Http\Controllers\Admin\ModuleContentManagementController;
 use App\Http\Controllers\Admin\ModuleExerciseManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
+use App\Http\Controllers\Admin\VideoManagementController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MaterialController;
@@ -97,5 +99,22 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
         Route::get('/{id}', [AssignmentManagementController::class, 'show']);
         Route::put('/{id}', [AssignmentManagementController::class, 'update']);
         Route::delete('/{id}', [AssignmentManagementController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'videos'], function () {
+        Route::get('/', [VideoManagementController::class, 'index']);
+        Route::post('/', [VideoManagementController::class, 'store']);
+        Route::get('/{id}', [VideoManagementController::class, 'show']);
+        Route::put('/{id}', [VideoManagementController::class, 'update']);
+        Route::delete('/{id}', [VideoManagementController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'files'], function () {
+        Route::get('/', [FileManagementController::class, 'index']);
+        Route::post('/', [FileManagementController::class, 'store']);
+        Route::get('/{id}', [FileManagementController::class, 'show']);
+        Route::post('/{id}', [FileManagementController::class, 'update']);
+        Route::delete('/{id}', [FileManagementController::class, 'destroy']);
+        Route::get('/{id}/download', [FileManagementController::class, 'download']);
     });
 });
