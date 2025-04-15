@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditTrail;
+use App\Models\ContentProgress;
 use App\Models\Course;
+use App\Models\Enrollment;
+use App\Models\ModuleProgress;
 use App\Models\Registration;
 use App\Models\User;
 use App\Notifications\RegistrationApproved;
@@ -11,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Midtrans\Snap;
 use Midtrans\Config as MidtransConfig;
@@ -69,58 +74,73 @@ class RegistrationController extends Controller
         return response()->json(['data' => $registrations], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
+     /**
+     * Store a newly created registration.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-
         $request->validate([
-            'user_id' => 'required|exists:users,id',
             'course_id' => 'required|exists:courses,id',
         ]);
 
-        $userId = $request->user_id;
+        $userId = auth()->id();
         $courseId = $request->course_id;
 
+        // Check for existing registration
         $existingRegistration = Registration::where('user_id', $userId)
             ->where('course_id', $courseId)
             ->first();
 
         if ($existingRegistration) {
-            // User is already registered for this course
-            return response()->json(['message' => 'Anda sudah mendaftar kelas ini'], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda sudah mendaftar kelas ini'
+            ], 422);
         }
 
         try {
-            // Use transactions to ensure atomicity of database operations
             DB::beginTransaction();
 
-            // Create a new registration
+            // Create registration for authenticated user
             $registration = Registration::create([
-                'user_id' => $request->user_id,
-                'course_id' => $request->course_id,
+                'user_id' => $userId,
+                'course_id' => $courseId,
+                'status' => 'pending'
             ]);
 
-            // Commit the transaction if all operations are successful
-            DB::commit();
-
-            $userEmail = User::findOrFail($registration->user_id);
-            $registration->email = $userEmail->email;
+            $user = auth()->user();
 
             // Send email notification to admin
             $adminEmail = config('mail.from.address');
-            Notification::route('mail', $adminEmail)->notify(new RegistrationNotification($registration));
+            Notification::route('mail', $adminEmail)
+                ->notify(new RegistrationNotification($registration));
 
-            return response()->json(['data' => $registration, 'message' => 'Registration created successfully', 'registration_id' => $registration->id], 201);
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pendaftaran berhasil dibuat',
+                'data' => [
+                    'registration' => $registration->load('course'),
+                    'user' => [
+                        'name' => $user->name,
+                        'email' => $user->email
+                    ]
+                ]
+            ], 201);
+
         } catch (\Exception $e) {
-            // Rollback the transaction if an error occurs
             DB::rollBack();
-            // You can log the error here or return an error response
-            return response()->json(['message' => 'Failed to create registration. Please try again later.'], 500);
+            Log::error('Registration creation failed: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat pendaftaran. Silakan coba lagi.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
@@ -130,16 +150,20 @@ class RegistrationController extends Controller
      * @param  int  $userId
      * @return \Illuminate\Http\Response
      */
-    public function getUserCourses($userId)
+    public function getUserCourses()
     {
-        // Retrieve the registrations for the given user ID
-        $registrations = Registration::with('course:id,name,image,place,operational_start,status,guidelines')
-            ->where('user_id', $userId)
-            ->get(['course_id', 'verification']);
+        $userId = auth()->id();
 
-        if ($registrations->isEmpty()) {
-            return response()->json(['message' => 'Anda belum mendaftar kelas'], Response::HTTP_NOT_FOUND);
-        }
+    $registrations = Registration::with('course:id,name,image,place,operational_start,status,guidelines')
+        ->where('user_id', $userId)
+        ->get(['course_id', 'verification']);
+
+    if ($registrations->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Anda belum mendaftar kelas'
+        ], 404);
+    }
 
         // Extract the course IDs from registrations
         $courseIds = $registrations->pluck('course_id');
@@ -163,42 +187,176 @@ class RegistrationController extends Controller
         return response()->json(['data' => $courses], Response::HTTP_OK);
     }
     /**
-     * Approve a registration.
+     * Approve a registration and create enrollment.
      *
      * @param  int  $registrationId
      * @return \Illuminate\Http\Response
      */
     public function approveRegistration($registrationId)
     {
-        // Find the registration by ID
-        $registration = Registration::findOrFail($registrationId);
-
         try {
-            // Use transactions to ensure atomicity of database operations
-            DB::beginTransaction();
+            return DB::transaction(function () use ($registrationId) {
+                // Find the registration with relationships
+                $registration = Registration::with(['user', 'course'])
+                    ->findOrFail($registrationId);
 
-            // Commit the transaction if all operations are successful
-            DB::commit();
+                // Validate registration state
+                if ($registration->verification) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pendaftaran sudah diverifikasi sebelumnya'
+                    ], 422);
+                }
 
-            Notification::route('mail', $registration->user->email)->notify(new RegistrationApproved($registration));
+                if (!$registration->payment_status === 'paid') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pembayaran belum selesai'
+                    ], 422);
+                }
 
-            $registration->verification = !$registration->verification;
-            $registration->save();
+                // Check for existing enrollment
+                $existingEnrollment = Enrollment::where([
+                    'user_id' => $registration->user_id,
+                    'course_id' => $registration->course_id
+                ])->first();
 
-            return response()->json(['data' => $registration, 'message' => 'Registration approved successfully'], 201);
+                if ($existingEnrollment) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Pengguna sudah terdaftar di kelas ini'
+                    ], 422);
+                }
+
+                // Check if course is still active
+                if ($registration->course->status !== 'active') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Kelas tidak aktif'
+                    ], 422);
+                }
+
+                // Update registration verification status
+                $registration->update([
+                    'verification' => true,
+                    'verified_at' => now(),
+                    'verified_by' => auth()->id()
+                ]);
+
+                // Create new enrollment
+                $enrollment = Enrollment::create([
+                    'user_id' => $registration->user_id,
+                    'course_id' => $registration->course_id,
+                    'registration_id' => $registration->id,
+                    'status' => 'active',
+                    'started_at' => now(),
+                    'progress_percentage' => 0.0
+                ]);
+
+                // Initialize module progress
+                $this->initializeModuleProgress($enrollment);
+
+                // Log the enrollment creation
+                $this->logEnrollmentCreation($enrollment);
+
+                // Send notification to user
+                try {
+                    Notification::route('mail', $registration->user->email)
+                        ->notify(new RegistrationApproved($registration));
+                } catch (\Exception $e) {
+                    // Log notification failure but don't rollback transaction
+                    Log::error('Failed to send enrollment notification: ' . $e->getMessage());
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pendaftaran berhasil diverifikasi dan enrollment telah dibuat',
+                    'data' => [
+                        'registration' => $registration->fresh(['user', 'course']),
+                        'enrollment' => $enrollment->load('course'),
+                        'module_progress' => ModuleProgress::where('enrollment_id', $enrollment->id)
+                            ->with('module')
+                            ->get()
+                    ]
+                ], 201);
+            });
         } catch (\Exception $e) {
-            // Rollback the transaction if an error occurs
-            DB::rollBack();
-            // You can log the error here or return an error response
-            return response()->json(['message' => 'Failed to approve registration. Please try again later.'], 500);
+            Log::error('Registration approval failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memverifikasi pendaftaran',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
 
+    /**
+     * Initialize module progress for new enrollment.
+     *
+     * @param  Enrollment  $enrollment
+     * @return void
+     */
+    private function initializeModuleProgress(Enrollment $enrollment)
+    {
+        // Get all modules with their contents
+        $modules = $enrollment->course->modules()
+            ->orderBy('order')
+            ->with(['contents' => function ($query) {
+                $query->orderBy('order');
+            }])
+            ->get();
 
-        // Set the verification status to true
+        $now = now();
 
-        // You can add additional logic here, such as sending a notification to the user
+        foreach ($modules as $index => $module) {
+            // Create module progress record
+            $moduleProgress = ModuleProgress::create([
+                'enrollment_id' => $enrollment->id,
+                'module_id' => $module->id,
+                'status' => $index === 0 ? 'active' : 'locked',
+                'progress_percentage' => 0.0,
+                'started_at' => $index === 0 ? $now : null
+            ]);
 
-        return response()->json(['message' => 'Registration approved successfully'], 200);
+            // Create content progress records
+            foreach ($module->contents as $content) {
+                ContentProgress::create([
+                    'enrollment_id' => $enrollment->id,
+                    'module_content_id' => $content->id,
+                    'status' => 'not_started',
+                    'score' => null,
+                    'attempts' => 0,
+                    'last_attempt_at' => null
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Log enrollment creation to audit trail.
+     *
+     * @param  Enrollment  $enrollment
+     * @return void
+     */
+    private function logEnrollmentCreation(Enrollment $enrollment)
+    {
+        AuditTrail::create([
+            'user_id' => auth()->id() ?? 1,
+            'action' => 'enrollment_created',
+            'model_type' => 'enrollment',
+            'model_id' => $enrollment->id,
+            'description' => sprintf(
+                'Created enrollment for user %s in course "%s"',
+                $enrollment->user->email ?? $enrollment->user_id,
+                $enrollment->course->name ?? $enrollment->course_id
+            ),
+            'old_values' => null,
+            'new_values' => [
+                'enrollment' => $enrollment->toArray(),
+                'created_at' => now()->toDateTimeString(),
+                'created_by' => auth()->user()->email ?? 'system'
+            ]
+        ]);
     }
 
     /**

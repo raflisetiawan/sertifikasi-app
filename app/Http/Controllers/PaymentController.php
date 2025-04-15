@@ -10,11 +10,17 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use App\Http\Requests\Payments\CreateTransactionRequest as PaymentsCreateTransactionRequest;
+use App\Models\Payment;
+use App\Services\PaymentService;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
-    public function __construct()
+    protected $paymentService;
+
+    public function __construct(PaymentService $paymentService)
     {
+        $this->paymentService = $paymentService;
         $this->initializeMidtransConfig();
     }
 
@@ -36,51 +42,84 @@ class PaymentController extends Controller
         }
     }
 
-    public function createTransaction(PaymentsCreateTransactionRequest $request)
+    public function createTransaction(Request $request)
     {
+        $request->validate([
+            'registration_id' => 'required|exists:registrations,id',
+            'amount' => 'required|numeric|min:1'
+        ]);
+
         try {
-            Log::info('Creating new transaction', ['user_id' => Auth::id()]);
+            $registration = Registration::with('user')->findOrFail($request->registration_id);
 
-            $order_id = uniqid();
-            $user = Auth::user();
-            $customerDetails = $this->prepareCustomerDetails($user);
+            $customerDetails = $this->prepareCustomerDetails($registration->user);
 
-            $registration = $this->updateRegistration($request->registration_id, $order_id);
-
-            $params = [
-                'transaction_details' => [
-                    'order_id' => $order_id,
-                    'gross_amount' => $request->amount,
-                ],
-                'customer_details' => $customerDetails
-            ];
-
-            $transaction = $this->processTransaction($params);
-
-            Log::info('Transaction created successfully', [
-                'order_id' => $order_id,
-                'registration_id' => $registration->id
-            ]);
+            $payment = $this->paymentService->createTransaction(
+                $registration,
+                $request->amount,
+                $customerDetails
+            );
 
             return response()->json([
-                'url' => $transaction->redirect_url,
-                'registration_id' => $registration->id,
-                'token' => $transaction->token
+                'success' => true,
+                'message' => 'Payment initiated successfully',
+                'data' => [
+                    'payment_url' => $payment->payment_url,
+                    'snap_token' => $payment->snap_token
+                ]
             ]);
+
         } catch (\Exception $e) {
-            Log::error('Failed to create transaction', [
+            Log::error('Payment creation failed', [
                 'error' => $e->getMessage(),
-                'user_id' => Auth::id(),
-                'trace' => $e->getTraceAsString()
+                'registration_id' => $request->registration_id
             ]);
 
             return response()->json([
-                'error' => 'Failed to create transaction',
-                'message' => $e->getMessage()
+                'success' => false,
+                'message' => 'Failed to create payment'
             ], 500);
         }
     }
 
+     public function handleCallback(Request $request)
+    {
+        Log::debug($request->all());
+        try {
+            if (!$this->isValidSignature($request)) {
+                return response()->json([
+                    'message' => 'Invalid signature'
+                ], 400);
+            }
+
+            $payment = $this->paymentService->handleCallback($request->all());
+            Log::info('Payment callback processed successfully', [
+                'order_id' => $request->order_id,
+                'status' => $payment->transaction_status
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment callback processed successfully',
+                'data' => [
+                    'payment' => $payment->fresh(['registration']),
+                    'enrollment' => $payment->registration->enrollment
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Payment callback failed', [
+                'error' => $e->getMessage(),
+                'data' => $request->all()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process payment callback',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
     private function prepareCustomerDetails($user): array
     {
         $name = explode(' ', $user->name);
@@ -117,102 +156,97 @@ class PaymentController extends Controller
         }
     }
 
-    public function handleCallback(Request $request)
-    {
-        try {
-            Log::info('Received payment callback', ['order_id' => $request->order_id]);
-
-            if (!$this->isValidSignature($request)) {
-                Log::warning('Invalid signature in callback', ['order_id' => $request->order_id]);
-                return response()->json(['message' => 'Invalid signature'], 400);
-            }
-
-            $registration = $this->processCallbackUpdate($request);
-
-            Log::info('Payment callback processed successfully', [
-                'order_id' => $request->order_id,
-                'status' => $request->transaction_status
-            ]);
-
-            return response()->json(['message' => 'Callback handled successfully']);
-        } catch (\Exception $e) {
-            Log::error('Payment callback processing failed', [
-                'error' => $e->getMessage(),
-                'order_id' => $request->order_id ?? null,
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json(['message' => 'Failed to process callback'], 500);
-        }
-    }
-
     private function isValidSignature(Request $request): bool
     {
-        $serverKey = config('midtrans.server_key');
+        $serverKey = config('services.midtrans.server_key');
         $hashed = hash("sha512", $request->order_id . $request->status_code . $request->gross_amount . $serverKey);
         return $hashed === $request->signature_key;
     }
+public function updatePaymentStatus(Request $request)
+{
+    try {
+        Log::info('Updating payment status', ['order_id' => $request->order_id]);
 
-    private function processCallbackUpdate(Request $request): Registration
-    {
-        $registration = Registration::where('midtrans_order_id', $request->order_id)->firstOrFail();
+        // Find payment by midtrans_order_id instead of registration
+        $payment = Payment::where('midtrans_order_id', $request->order_id)->firstOrFail();
 
-        $registration->update([
-            'payment_status' => $request->transaction_status,
+        DB::beginTransaction();
+
+        // Update payment status
+        $payment->update([
+            'transaction_status' => $request->transaction_status,
             'transaction_id' => $request->transaction_id,
             'payment_type' => $request->payment_type,
             'transaction_time' => $request->transaction_time,
-            'gross_amount' => $request->gross_amount
+            'gross_amount' => $request->gross_amount,
+            'fraud_status' => $request->fraud_status,
+            'payment_details' => $request->all()
         ]);
 
-        return $registration;
-    }
-
-    public function updatePaymentStatus(Request $request)
-    {
-        try {
-            Log::info('Updating payment status', ['order_id' => $request->order_id]);
-
-            $registration = Registration::where('midtrans_order_id', $request->order_id)->firstOrFail();
-
-            // Update registration status
-            $registration->update([
-                'payment_status' => $request->transaction_status,
-                'transaction_id' => $request->transaction_id,
-                'payment_type' => $request->payment_type,
-                'transaction_time' => $request->transaction_time,
-                'gross_amount' => $request->gross_amount,
-                'fraud_status' => $request->fraud_status,
-                'verification' => true
+        // If payment is successful, update registration verification
+        if ($request->transaction_status === 'settlement') {
+            $payment->registration->update([
+                'verification' => true,
+                'verified_at' => now(),
+                'status' => 'active'
             ]);
-
-            // Jika pembayaran settlement/success, update verification juga
-            if ($request->transaction_status === 'settlement') {
-                $registration->update([
-                    'verification' => true
-                ]);
-            }
-
-            Log::info('Payment status updated successfully', [
-                'order_id' => $request->order_id,
-                'status' => $request->transaction_status
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Payment status updated successfully',
-                'data' => $registration
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Failed to update payment status', [
-                'error' => $e->getMessage(),
-                'order_id' => $request->order_id ?? null
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update payment status'
-            ], 500);
         }
+
+        DB::commit();
+
+        Log::info('Payment status updated successfully', [
+            'order_id' => $request->order_id,
+            'status' => $request->transaction_status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment status updated successfully',
+            'data' => [
+                'payment' => $payment->fresh(),
+                'registration' => $payment->registration->fresh()
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Log::error('Failed to update payment status', [
+            'error' => $e->getMessage(),
+            'order_id' => $request->order_id ?? null
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update payment status',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
+private function processCallbackUpdate(Request $request): Payment
+{
+    $payment = Payment::where('midtrans_order_id', $request->order_id)->firstOrFail();
+
+    DB::transaction(function () use ($payment, $request) {
+        $payment->update([
+            'transaction_status' => $request->transaction_status,
+            'transaction_id' => $request->transaction_id,
+            'payment_type' => $request->payment_type,
+            'transaction_time' => $request->transaction_time,
+            'gross_amount' => $request->gross_amount,
+            'fraud_status' => $request->fraud_status,
+            'payment_details' => $request->all()
+        ]);
+
+        if ($request->transaction_status === 'settlement') {
+            $payment->registration->update([
+                'verification' => true,
+                'verified_at' => now(),
+                'status' => 'active'
+            ]);
+        }
+    });
+
+    return $payment;
+}
 }

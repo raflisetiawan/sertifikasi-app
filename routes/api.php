@@ -53,7 +53,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::post('/registration', [RegistrationController::class, 'store']);
-    Route::get('/user/course/{id}', [RegistrationController::class, 'getUserCourses']);
+    Route::get('/user/courses', [RegistrationController::class, 'getUserCourses']);
 
     Route::get('/courses/{id}/with-materials', [CourseController::class, 'getCourseWithMaterials']);
     Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
@@ -64,10 +64,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('/user-profile/{id}', [UserProfileController::class, 'update']);
     Route::delete('/user-profile/{id}/remove-image', [UserProfileController::class, 'removeImage']);
 
-    Route::post('/payments/create', [PaymentController::class, 'createTransaction']);
-    Route::post('payments/update-status', [PaymentController::class, 'updatePaymentStatus']);
+    Route::post('payments/create', [PaymentController::class, 'createTransaction']);
+    Route::get('payments/{registration}', [PaymentController::class, 'getPaymentStatus']);
 });
-Route::post('/payments/callback', [PaymentController::class, 'handleCallback']);
+// Route::prefix('payments')->group(function () {
+//     Route::post('callback', [PaymentController::class, 'handleCallback']);
+//     Route::post('status/update', [PaymentController::class, 'updatePaymentStatus']);
+// });
+
+Route::post('payments/callback', [PaymentController::class, 'handleCallback'])
+    ->withoutMiddleware(['auth:sanctum', 'throttle:api', 'auth', 'auth:api'])
+    ->name('payments.callback');  // Add route name
+
+Route::post('payments/status/update', [PaymentController::class, 'updatePaymentStatus']);
+
 
 // Routes that do not require authentication
 Route::apiResource('contacts', ContactController::class)->except(['destroy']);

@@ -7,6 +7,8 @@ use App\Models\File;
 use App\Models\Quiz;
 use App\Models\Text;
 use App\Models\Video;
+use App\Services\EnrollmentService;
+use App\Services\PaymentService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\ServiceProvider;
 
@@ -17,7 +19,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(EnrollmentService::class, function ($app) {
+            return new EnrollmentService();
+        });
+
+        $this->app->singleton(PaymentService::class, function ($app) {
+            return new PaymentService(
+                $app->make(EnrollmentService::class)
+            );
+        });
     }
 
     /**

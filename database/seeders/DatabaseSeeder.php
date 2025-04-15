@@ -1,7 +1,10 @@
 <?php
 
+use Database\Seeders\CourseSeeder;
 use Database\Seeders\FaqSeeder;
 use Database\Seeders\MaterialsSeeder;
+use Database\Seeders\ModuleContentSeeder;
+use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\TrainerSeeder;
 use Database\Seeders\UserSeeder;
@@ -11,12 +14,15 @@ class DatabaseSeeder extends Seeder
 {
     public function run()
     {
-        // Call the RoleSeeder
-        $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
-        $this->call(FaqSeeder::class);
-        $this->call(TrainerSeeder::class);
-        $this->call(MaterialsSeeder::class);
-        // Add other seeders here...
+        $this->call([
+            RoleSeeder::class,
+            UserSeeder::class,
+            FaqSeeder::class,
+            TrainerSeeder::class,
+            MaterialsSeeder::class,
+            CourseSeeder::class,
+            ModuleSeeder::class,
+            ModuleContentSeeder::class
+        ]);
     }
 }

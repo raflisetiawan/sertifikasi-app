@@ -36,5 +36,15 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
             'role_id' => $userRoleId,
         ]);
+        DB::table('users')->insert([
+            'name' => 'Rafli',
+            'email' => 'cuy.raflisetiawan@gmail.com',
+            'email_verified_at' => now(),
+            'password' => Hash::make('password'),
+            'phone_number' => '08123456789',
+            'created_at' => now(),
+            'updated_at' => now(),
+            'role_id' => $userRoleId,
+        ]);
     }
 }

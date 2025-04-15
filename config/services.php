@@ -36,6 +36,7 @@ return [
         'is_production'  => env('MIDTRANS_IS_PRODUCTION', true),
         'is_sanitized'   => env('MIDTRANS_IS_SANITIZED', true),
         'is_3ds'         => env('MIDTRANS_IS_3DS', true),
+        'callback_url' => env('MIDTRANS_CALLBACK_URL'),
         ],
 
 ];

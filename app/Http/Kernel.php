@@ -45,6 +45,11 @@ class Kernel extends HttpKernel
         ],
     ];
 
+    protected $routeMiddleware = [
+        // ... other middleware ...
+        'payment.callback' => \App\Http\Middleware\PaymentCallbackMiddleware::class,
+    ];
+
     /**
      * The application's middleware aliases.
      *
