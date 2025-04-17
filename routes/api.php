@@ -7,14 +7,17 @@ use App\Http\Controllers\ChangePasswordController;
 use App\Http\Controllers\CodeCheckController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ResendEmailVerificationController;
 use App\Http\Controllers\ResetPasswordController;
 use App\Http\Controllers\TrainerController;
+use App\Http\Controllers\UserDashboardController;
 use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\VerifyEmailController;
 use App\Http\Controllers\ZoomLinkController;
@@ -64,8 +67,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch('/user-profile/{id}', [UserProfileController::class, 'update']);
     Route::delete('/user-profile/{id}/remove-image', [UserProfileController::class, 'removeImage']);
 
+
     Route::post('payments/create', [PaymentController::class, 'createTransaction']);
     Route::get('payments/{registration}', [PaymentController::class, 'getPaymentStatus']);
+
+    Route::get('/user/dashboard', [UserDashboardController::class, 'index']);
+    Route::get('/user/courses', [CourseEnrollmentController::class, 'index']);
+    Route::get('/user/courses/{id}', [CourseEnrollmentController::class, 'show']);
+
+    Route::get('/user/profile', [UserProfileController::class, 'getProfile']);
+    Route::put('/user/profile', [UserProfileController::class, 'updateProfile']);
+    Route::put('/user/{id}/update-image', [UserProfileController::class, 'updateImage']);
+
+    Route::get('/user/payments', [PaymentHistoryController::class, 'index']);
+
 });
 // Route::prefix('payments')->group(function () {
 //     Route::post('callback', [PaymentController::class, 'handleCallback']);

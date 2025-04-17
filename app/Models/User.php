@@ -59,4 +59,14 @@ class User extends Authenticatable implements MustVerifyEmail
             get: fn ($profiles) => asset('/storage/users/' . $profiles),
         );
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
+
+    public function registrations()
+    {
+        return $this->hasMany(Registration::class);
+    }
 }
