@@ -35,7 +35,7 @@ class CourseController extends Controller
             'price' => 'required|numeric',
             'place' => 'required|string',
             'duration' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'operational_start' => 'required|date',
             'operational_end' => 'required|date',
             'benefit' => 'nullable|string',
@@ -43,7 +43,6 @@ class CourseController extends Controller
             'trainer_ids' => 'required|array', // Changed to array for multiple trainers
             'trainer_ids.*' => 'exists:trainers,id', // Validate each trainer ID
             'syllabus' => 'nullable|file|max:10000',
-            'certificate_example' => 'nullable|file|max:10000',
             'schedule' => 'nullable|file|max:10000'
         ]);
 
@@ -73,13 +72,6 @@ class CourseController extends Controller
             $syllabus->storeAs('public/courses/syllabus', $syllabusHash);
         }
 
-        $certificateExampleHash = null;
-        if ($request->hasFile('certificate_example')) {
-            $certificateExample = $request->file('certificate_example');
-            $certificateExampleHash = $certificateExample->hashName();
-            $certificateExample->storeAs('public/courses/certificates', $certificateExampleHash);
-        }
-
         $scheduleHash = null;
         if ($request->hasFile('schedule')) {
             $schedule = $request->file('schedule');
@@ -103,7 +95,6 @@ class CourseController extends Controller
             'benefit' => $request->benefit,
             'guidelines' => $guidelinesHash,
             'syllabus_path' => $syllabusHash,
-            'certificate_example_path' => $certificateExampleHash,
             'schedule_path' => $scheduleHash
         ]);
 
