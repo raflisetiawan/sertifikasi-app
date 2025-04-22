@@ -27,24 +27,71 @@ class CourseController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'key_concepts' => 'nullable|string',
-            'facility' => 'required|string',
-            'price' => 'required|numeric',
-            'place' => 'required|string',
-            'duration' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'operational_start' => 'required|date',
-            'operational_end' => 'required|date',
-            'benefit' => 'nullable|string',
-            'guidelines' => 'nullable|file|max:20000',
-            'trainer_ids' => 'required|array', // Changed to array for multiple trainers
-            'trainer_ids.*' => 'exists:trainers,id', // Validate each trainer ID
-            'syllabus' => 'nullable|file|max:10000',
-            'schedule' => 'nullable|file|max:10000'
-        ]);
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255|unique:courses,name',
+                'description' => 'required|string|min:12',
+                'key_concepts' => 'required|array',
+                'key_concepts.*' => 'string|max:255',
+                'facility' => 'required|array',
+                'facility.*' => 'string|max:255',
+                'price' => 'required|numeric|min:0',
+                'place' => 'required|string|in:online,offline,hybrid,Online,Offline,Hybrid',
+                'duration' => 'required|string|max:50',
+                'image' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'operational_start' => [
+                    'required',
+                    'date',
+                    'after_or_equal:today'
+                ],
+                'operational_end' => [
+                    'required',
+                    'date',
+                    'after:operational_start'
+                ],
+                'benefit' => 'required|string|min:12',
+                'guidelines' => 'required|file|mimes:pdf|max:10240', // 10MB max
+                'trainer_ids' => 'required|array|min:1',
+                'trainer_ids.*' => 'exists:trainers,id',
+                'syllabus' => 'required|file|mimes:pdf|max:10240',
+                'schedule' => 'required|file|mimes:pdf|max:10240'
+            ], [
+                'name.required' => 'Nama kelas harus diisi',
+                'name.unique' => 'Nama kelas sudah digunakan',
+                'description.required' => 'Deskripsi kelas harus diisi',
+                'description.min' => 'Deskripsi minimal 50 karakter',
+                'key_concepts.required' => 'Konsep kunci harus diisi',
+                'key_concepts.array' => 'Format konsep kunci tidak valid',
+                'facility.required' => 'Fasilitas harus diisi',
+                'facility.array' => 'Format fasilitas tidak valid',
+                'price.required' => 'Harga kelas harus diisi',
+                'price.numeric' => 'Harga harus berupa angka',
+                'price.min' => 'Harga tidak boleh negatif',
+                'place.required' => 'Tempat pelaksanaan harus diisi',
+                'place.in' => 'Tempat harus online, offline, atau hybrid',
+                'duration.required' => 'Durasi kelas harus diisi',
+                'image.required' => 'Gambar kelas harus diupload',
+                'image.image' => 'File harus berupa gambar',
+                'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau webp',
+                'image.max' => 'Ukuran gambar maksimal 2MB',
+                'operational_start.required' => 'Tanggal mulai harus diisi',
+                'operational_start.after_or_equal' => 'Tanggal mulai tidak boleh kurang dari hari ini',
+                'operational_end.required' => 'Tanggal selesai harus diisi',
+                'operational_end.after' => 'Tanggal selesai harus setelah tanggal mulai',
+                'benefit.required' => 'Benefit kelas harus diisi',
+                'benefit.min' => 'Benefit minimal 50 karakter',
+                'guidelines.required' => 'Pedoman kelas harus diupload',
+                'guidelines.mimes' => 'Format pedoman harus PDF',
+                'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
+                'trainer_ids.required' => 'Trainer harus dipilih',
+                'trainer_ids.min' => 'Minimal pilih 1 trainer',
+                'trainer_ids.*.exists' => 'Trainer tidak valid',
+                'syllabus.required' => 'Silabus harus diupload',
+                'syllabus.mimes' => 'Format silabus harus PDF',
+                'syllabus.max' => 'Ukuran silabus maksimal 10MB',
+                'schedule.required' => 'Jadwal kelas harus diupload',
+                'schedule.mimes' => 'Format jadwal harus PDF',
+                'schedule.max' => 'Ukuran jadwal maksimal 10MB'
+            ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -122,25 +169,60 @@ class CourseController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'key_concepts' => 'nullable|string',
-            'facility' => 'required|string',
-            'price' => 'required|numeric',
-            'place' => 'required|string',
-            'duration' => 'required|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'operational_start' => 'required|date',
-            'operational_end' => 'required|date',
-            'benefit' => 'nullable|string',
-            'guidelines' => 'nullable|file|max:20000',
-            'trainer_ids' => 'required|array',
-            'trainer_ids.*' => 'exists:trainers,id',
-            'syllabus' => 'nullable|file|max:10000',
-            'certificate_example' => 'nullable|file|max:10000',
-            'schedule' => 'nullable|file|max:10000'
-        ]);
+            $validator = Validator::make($request->all(), [
+                'name' => 'sometimes|required|string|max:255|unique:courses,name,'.$id,
+                'description' => 'sometimes|required|string|min:12',
+                'key_concepts' => 'sometimes|required|array',
+                'key_concepts.*' => 'string|max:255',
+                'facility' => 'sometimes|required|array',
+                'facility.*' => 'string|max:255',
+                'price' => 'sometimes|required|numeric|min:0',
+                'place' => 'sometimes|required|string|in:online,offline,hybrid,Online,Offline,Hybrid',
+                'duration' => 'sometimes|required|string|max:12',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+                'operational_start' => [
+                    'sometimes',
+                    'required',
+                    'date',
+                    'after_or_equal:today'
+                ],
+                'operational_end' => [
+                    'sometimes',
+                    'required',
+                    'date',
+                    'after:operational_start'
+                ],
+                'benefit' => 'sometimes|required|string|min:12',
+                'guidelines' => 'nullable|file|mimes:pdf|max:10240',
+                'trainer_ids' => 'sometimes|required|array|min:1',
+                'trainer_ids.*' => 'exists:trainers,id',
+                'syllabus' => 'nullable|file|mimes:pdf|max:10240',
+                'schedule' => 'nullable|file|mimes:pdf|max:10240',
+                'status' => 'sometimes|required|in:not_started,ongoing,completed'
+            ], [
+                'name.unique' => 'Nama kelas sudah digunakan',
+                'description.min' => 'Deskripsi minimal 50 karakter',
+                'key_concepts.array' => 'Format konsep kunci tidak valid',
+                'facility.array' => 'Format fasilitas tidak valid',
+                'price.numeric' => 'Harga harus berupa angka',
+                'price.min' => 'Harga tidak boleh negatif',
+                'place.in' => 'Tempat harus online, offline, atau hybrid',
+                'image.image' => 'File harus berupa gambar',
+                'image.mimes' => 'Format gambar harus jpeg, png, jpg, atau webp',
+                'image.max' => 'Ukuran gambar maksimal 2MB',
+                'operational_start.after_or_equal' => 'Tanggal mulai tidak boleh kurang dari hari ini',
+                'operational_end.after' => 'Tanggal selesai harus setelah tanggal mulai',
+                'benefit.min' => 'Benefit minimal 50 karakter',
+                'guidelines.mimes' => 'Format pedoman harus PDF',
+                'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
+                'trainer_ids.min' => 'Minimal pilih 1 trainer',
+                'trainer_ids.*.exists' => 'Trainer tidak valid',
+                'syllabus.mimes' => 'Format silabus harus PDF',
+                'syllabus.max' => 'Ukuran silabus maksimal 10MB',
+                'schedule.mimes' => 'Format jadwal harus PDF',
+                'schedule.max' => 'Ukuran jadwal maksimal 10MB',
+                'status.in' => 'Status tidak valid'
+            ]);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);

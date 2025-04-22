@@ -15,8 +15,8 @@
                 $table->id();
                 $table->string('name'); // Kolom nama
                 $table->text('description'); // Kolom deskripsi
-                $table->text('key_concepts')->nullable(); // Kolom deskripsi
-                $table->text('facility'); // Kolom fasilitas
+                $table->json('key_concepts')->nullable(); // Kolom deskripsi
+                $table->json('facility');// Kolom fasilitas
                 $table->decimal('price', 10, 2); // Kolom harga (contoh: 10.00)
                 $table->string('place'); // Kolom tempat
                 $table->string('duration'); // Kolom waktu (contoh: 1 jam)

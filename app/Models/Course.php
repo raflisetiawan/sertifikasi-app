@@ -29,7 +29,12 @@ class Course extends Model
         'schedule_path'
     ];
 
-
+    protected $casts = [
+        'operational_start' => 'datetime',
+        'operational_end' => 'datetime',
+        'key_concepts' => 'array',
+        'facility' => 'array',
+    ];
 
     public function materials()
     {
