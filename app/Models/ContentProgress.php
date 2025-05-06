@@ -14,6 +14,7 @@ class ContentProgress extends Model
         'module_content_id',
         'status',
         'completed_at',
+        'started_at',
         'score',
         'attempts',
         'last_attempt_at'
@@ -22,7 +23,9 @@ class ContentProgress extends Model
     protected $casts = [
         'completed_at' => 'datetime',
         'last_attempt_at' => 'datetime',
-        'score' => 'float'
+        'score' => 'float',
+        'submission_details' => 'array',
+        'started_at' => 'datetime',
     ];
 
     public function enrollment()

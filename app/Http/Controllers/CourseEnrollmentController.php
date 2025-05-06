@@ -109,6 +109,7 @@ class CourseEnrollmentController extends Controller
                     ];
                 }),
                 'enrollment' => $registration->enrollment ? [
+                    'id' => $registration->enrollment->id,
                     'status' => $registration->enrollment->status,
                     'progress_percentage' => $registration->enrollment->progress_percentage,
                     'started_at' => $registration->enrollment->started_at,

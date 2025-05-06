@@ -22,6 +22,12 @@ class Quiz extends Model
         'questions' => 'array'
     ];
 
+    protected $hidden = [
+        'questions.*.correct_answer',
+        'questions.*.correct_answers',
+        'questions.*.explanation'
+    ];
+
     public function moduleContent()
     {
         return $this->morphOne(ModuleContent::class, 'content');

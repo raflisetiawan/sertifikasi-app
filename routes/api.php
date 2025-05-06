@@ -11,6 +11,7 @@ use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\MaterialController;
+use App\Http\Controllers\ModuleLearningController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentHistoryController;
 use App\Http\Controllers\RegistrationController;
@@ -81,6 +82,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('/user/payments', [PaymentHistoryController::class, 'index']);
 
+    Route::get('/enrollments/{enrollment}/modules/{module}', [ModuleLearningController::class, 'show']);
+    Route::post('/enrollments/{enrollment}/modules/{module}/progress', [ModuleLearningController::class, 'updateProgress']);
+    Route::get(
+        '/enrollments/{enrollment}/modules/{module}/contents/{content}/start-quiz',
+        [ModuleLearningController::class, 'startQuiz']
+    );
+
+    Route::post(
+        '/enrollments/{enrollment}/modules/{module}/contents/{content}/submit-quiz',
+        [ModuleLearningController::class, 'submitQuiz']
+    );
+
+
+    Route::post(
+        '/enrollments/{enrollment}/modules/{module}/contents/{content}/submit-assignment',
+        [ModuleLearningController::class, 'submitAssignment']
+    );
 });
 // Route::prefix('payments')->group(function () {
 //     Route::post('callback', [PaymentController::class, 'handleCallback']);

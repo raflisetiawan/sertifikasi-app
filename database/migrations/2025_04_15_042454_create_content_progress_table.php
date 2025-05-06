@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('module_content_id')->constrained()->onDelete('cascade');
             $table->enum('status', ['not_started', 'in_progress', 'completed'])->default('not_started');
             $table->timestamp('completed_at')->nullable();
+            $table->timestamp('started_at')->nullable();
             $table->float('score')->nullable();
             $table->integer('attempts')->default(0);
             $table->timestamp('last_attempt_at')->nullable();
