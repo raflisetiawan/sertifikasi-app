@@ -88,6 +88,19 @@ class ModuleLearningResource extends JsonResource
                     'mime_type' => $content->content->mime_type,
                     'file_size' => $content->content->file_size,
                 ];
+            case 'practice':
+                return [
+                    'title' => $content->content->title,
+                    'description' => $content->content->description,
+                    'time_limit_minutes' => $content->content->time_limit_minutes,
+                    'questions' => collect($content->content->questions)->map(function ($question) {
+                        return [
+                            'question' => $question['question'],
+                            'type' => $question['type'],
+                            'options' => $question['options'] ?? [],
+                        ];
+                    })->values()->all()
+                ];
             default:
                 return null;
         }

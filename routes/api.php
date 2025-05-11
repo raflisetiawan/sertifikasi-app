@@ -14,6 +14,7 @@ use App\Http\Controllers\MaterialController;
 use App\Http\Controllers\ModuleLearningController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentHistoryController;
+use App\Http\Controllers\PracticeController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ResendEmailVerificationController;
 use App\Http\Controllers\ResetPasswordController;
@@ -98,6 +99,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
         '/enrollments/{enrollment}/modules/{module}/contents/{content}/submit-assignment',
         [ModuleLearningController::class, 'submitAssignment']
+    );
+
+    Route::get(
+        '/enrollments/{enrollment}/modules/{module}/contents/{content}/start-practice',
+        [ModuleLearningController::class, 'startPractice']
+    );
+
+    Route::post(
+        '/enrollments/{enrollment}/modules/{module}/contents/{content}/submit-practice',
+        [ModuleLearningController::class, 'submitPractice']
     );
 });
 // Route::prefix('payments')->group(function () {

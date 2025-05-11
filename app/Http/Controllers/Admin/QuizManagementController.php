@@ -107,7 +107,6 @@ class QuizManagementController extends Controller
                 'message' => 'Kuis berhasil ditambahkan',
                 'data' => $quiz->load('moduleContent')
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -175,7 +174,6 @@ class QuizManagementController extends Controller
                 'message' => 'Kuis berhasil diperbarui',
                 'data' => $quiz->load('moduleContent')
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -208,7 +206,6 @@ class QuizManagementController extends Controller
                 'success' => true,
                 'message' => 'Kuis berhasil dihapus'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

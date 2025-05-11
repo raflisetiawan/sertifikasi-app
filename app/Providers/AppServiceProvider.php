@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Assignment;
 use App\Models\File;
+use App\Models\Practice;
 use App\Models\Quiz;
 use App\Models\Text;
 use App\Models\Video;
@@ -33,13 +34,15 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void {
+    public function boot(): void
+    {
         Relation::morphMap([
             'text' => Text::class,
             'video' => Video::class,
             'quiz' => Quiz::class,
             'assignment' => Assignment::class,
             'file' => File::class,
+            'practice' => Practice::class,
         ]);
     }
 }

@@ -6,6 +6,7 @@ use App\Http\Requests\AssignmentSubmissionRequest;
 use App\Http\Requests\QuizSubmissionRequest;
 use App\Http\Resources\ModuleLearningResource;
 use App\Http\Resources\QuizStartResource;
+use App\Models\ContentProgress;
 use App\Models\Enrollment;
 use App\Models\Module;
 use App\Models\ModuleContent;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 
 class ModuleLearningController extends Controller
 {
@@ -136,7 +138,6 @@ class ModuleLearningController extends Controller
                     'enrollment_progress' => $enrollment->fresh()
                 ]
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -304,7 +305,6 @@ class ModuleLearningController extends Controller
                     'attempts_left' => $quiz->max_attempts - $contentProgress->attempts
                 ]
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Quiz submission failed:', [
@@ -534,7 +534,6 @@ class ModuleLearningController extends Controller
                     'submission_details' => $contentProgress->submission_details
                 ]
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -550,5 +549,146 @@ class ModuleLearningController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    public function startPractice($enrollmentId, $moduleId, $contentId)
+    {
+        $content = ModuleContent::findOrFail($contentId);
+
+        if ($content->content_type !== 'practice') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Content is not a practice'
+            ], 400);
+        }
+
+        $practice = $content->content;
+
+        return response()->json([
+            'success' => true,
+            'data' => $practice->getForStudent()
+        ]);
+    }
+
+    public function submitPractice(Request $request, $enrollmentId, $moduleId, $contentId)
+    {
+        $validator = Validator::make($request->all(), [
+            'answers' => 'required|array',
+            'answers.*.question_id' => 'required|integer',
+            'answers.*.answer' => 'required'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $content = ModuleContent::findOrFail($contentId);
+            $practice = $content->content;
+
+            if (!$practice || $content->content_type !== 'practice') {
+                throw new \Exception('Invalid practice content');
+            }
+
+            // Calculate results
+            $results = $this->calculatePracticeResults($practice->questions, $request->answers);
+
+            // Update progress
+            $progress = ContentProgress::updateOrCreate(
+                [
+                    'enrollment_id' => $enrollmentId,
+                    'module_content_id' => $contentId
+                ],
+                [
+                    'status' => 'completed',
+                    'score' => $results['score'],
+                    'answers' => $request->answers,
+                    'completed_at' => now(),
+                    'submission_details' => [
+                        'answers' => $request->answers,
+                        'feedback' => $results['feedback'],
+                        'submitted_at' => now()->toDateTimeString()
+                    ]
+                ]
+            );
+
+            // Update module progress
+            $this->updateModuleProgress(
+                Enrollment::findOrFail($enrollmentId),
+                Module::findOrFail($moduleId)
+            );
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Practice submitted successfully',
+                'data' => [
+                    'score' => $results['score'],
+                    'feedback' => $results['feedback'],
+                    'progress' => $progress
+                ]
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to submit practice',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function calculatePracticeResults($questions, $answers)
+    {
+        $totalQuestions = count($questions);
+        $correctAnswers = 0;
+        $feedback = [];
+
+        foreach ($questions as $index => $question) {
+            // Find matching answer using the index instead of id
+            $userAnswer = collect($answers)->firstWhere('question_id', $index + 1);
+
+            if (!$userAnswer) continue;
+
+            $isCorrect = $this->checkAnswer($userAnswer['answer'], $question['answer_key']);
+
+            if ($isCorrect) {
+                $correctAnswers++;
+            }
+
+            $feedback[] = [
+                'question' => $question['question'],
+                'is_correct' => $isCorrect,
+                'explanation' => $question['explanation'] ?? null,
+                'correct_answer' => $question['answer_key'],
+                'your_answer' => $userAnswer['answer']
+            ];
+        }
+
+        $score = $totalQuestions > 0 ? ($correctAnswers / $totalQuestions) * 100 : 0;
+
+        return [
+            'score' => round($score, 2),
+            'feedback' => $feedback
+        ];
+    }
+
+    private function checkAnswer($userAnswer, $correctAnswer)
+    {
+        if (is_array($correctAnswer)) {
+            $userArr = is_array($userAnswer) ? $userAnswer : [$userAnswer];
+            sort($userArr);
+            sort($correctAnswer);
+            return $userArr == $correctAnswer;
+        }
+
+        // Convert both to strings and compare
+        return strtolower(trim((string)$userAnswer)) === strtolower(trim((string)$correctAnswer));
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ModuleConceptManagementController;
 use App\Http\Controllers\Admin\ModuleContentManagementController;
 use App\Http\Controllers\Admin\ModuleExerciseManagementController;
 use App\Http\Controllers\Admin\ModuleManagementController;
+use App\Http\Controllers\Admin\PracticeManagementController;
 use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
 use App\Http\Controllers\Admin\VideoManagementController;
@@ -107,6 +108,14 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
         Route::get('/{id}', [VideoManagementController::class, 'show']);
         Route::put('/{id}', [VideoManagementController::class, 'update']);
         Route::delete('/{id}', [VideoManagementController::class, 'destroy']);
+    });
+
+    Route::group(['prefix' => 'practices'], function () {
+        Route::get('/', [PracticeManagementController::class, 'index']);
+        Route::post('/', [PracticeManagementController::class, 'store']);
+        Route::get('/{id}', [PracticeManagementController::class, 'show']);
+        Route::put('/{id}', [PracticeManagementController::class, 'update']);
+        Route::delete('/{id}', [PracticeManagementController::class, 'destroy']);
     });
 
     Route::group(['prefix' => 'files'], function () {
