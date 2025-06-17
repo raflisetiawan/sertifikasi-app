@@ -12,18 +12,18 @@ class CourseSeeder extends Seeder
         Course::create([
             'name' => 'Laravel Web Development',
             'description' => 'Learn web development using Laravel framework',
-            'key_concepts' => json_encode([
+            'key_concepts' => [
                 'MVC Architecture',
                 'Database Migration',
                 'Authentication & Authorization',
                 'API Development'
-            ]),
-            'facility' => json_encode([
+            ],
+            'facility' => [
                 'Online Learning Platform',
                 'Live Mentoring',
                 'Project-based Learning',
                 'Certificate'
-            ]),
+            ],
             'price' => 1000,
             'place' => 'Online',
             'duration' => '3 months',

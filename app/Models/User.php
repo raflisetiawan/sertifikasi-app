@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\NewAccessToken;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -56,7 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function image(): Attribute
     {
         return Attribute::make(
-            get: fn ($profiles) => asset('/storage/users/' . $profiles),
+            get: fn($profiles) => asset('/storage/users/' . $profiles),
         );
     }
 
@@ -68,5 +70,17 @@ class User extends Authenticatable implements MustVerifyEmail
     public function registrations()
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function createToken(string $name, array $abilities = ['*'])
+    {
+        $token = $this->tokens()->create([
+            'name' => $name,
+            'token' => hash('sha256', $plainTextToken = Str::random(40)),
+            'abilities' => $abilities,
+            'expires_at' => now()->addHours(24),
+        ]);
+
+        return new NewAccessToken($token, $token->getKey() . '|' . $plainTextToken);
     }
 }

@@ -36,6 +36,19 @@ class ModuleLearningController extends Controller
             ], 403);
         }
 
+        // Check module access time
+        if (!$module->isAccessibleNow()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This module is not accessible at this time',
+                'access_details' => [
+                    'is_restricted' => $module->is_access_restricted,
+                    'starts_at' => $module->access_start_at,
+                    'ends_at' => $module->access_end_at
+                ]
+            ], 403);
+        }
+
         // Get module progress
         $moduleProgress = $enrollment->moduleProgresses()
             ->where('module_id', $module->id)
@@ -58,7 +71,6 @@ class ModuleLearningController extends Controller
             'content_progress' => $contentProgress
         ]);
     }
-
     public function updateProgress(Request $request, Enrollment $enrollment, Module $module)
     {
         // Validate user access

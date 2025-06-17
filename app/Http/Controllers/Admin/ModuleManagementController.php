@@ -27,6 +27,17 @@ class ModuleManagementController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+        $module = Module::findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Detail modul berhasil dimuat',
+            'data' => $module
+        ]);
+    }
+
     /**
      * Store a newly created module.
      */
@@ -40,7 +51,10 @@ class ModuleManagementController extends Controller
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'required|string',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_access_restricted' => 'boolean',
+            'access_start_at' => 'nullable|required_if:is_access_restricted,true|date',
+            'access_end_at' => 'nullable|date|after:access_start_at'
         ], [
             'course_id.required' => 'ID kursus wajib diisi',
             'course_id.exists' => 'Kursus tidak ditemukan',
@@ -57,7 +71,10 @@ class ModuleManagementController extends Controller
             'description.required' => 'Deskripsi wajib diisi',
             'thumbnail.image' => 'File harus berupa gambar',
             'thumbnail.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif',
-            'thumbnail.max' => 'Ukuran gambar maksimal 2MB'
+            'thumbnail.max' => 'Ukuran gambar maksimal 2MB',
+            'access_start_at.required_if' => 'Start date is required when access is restricted',
+            'access_end_at.after' => 'End date must be after start date'
+
         ]);
 
         if ($validator->fails()) {
@@ -80,7 +97,10 @@ class ModuleManagementController extends Controller
             'title' => $request->title,
             'subtitle' => $request->subtitle,
             'description' => $request->description,
-            'thumbnail' => $thumbnailPath
+            'thumbnail' => $thumbnailPath,
+            'is_access_restricted' => $request->boolean('is_access_restricted'),
+            'access_start_at' => $request->access_start_at,
+            'access_end_at' => $request->access_end_at
         ]);
 
         return response()->json([
@@ -93,16 +113,7 @@ class ModuleManagementController extends Controller
     /**
      * Display the specified module.
      */
-    public function show($id)
-    {
-        $module = Module::findOrFail($id);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail modul berhasil dimuat',
-            'data' => $module
-        ]);
-    }
 
     /**
      * Update the specified module.
@@ -116,7 +127,10 @@ class ModuleManagementController extends Controller
             'title' => 'sometimes|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'description' => 'sometimes|string',
-            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_access_restricted' => 'boolean',
+            'access_start_at' => 'nullable|required_if:is_access_restricted,true|date',
+            'access_end_at' => 'nullable|date|after:access_start_at'
         ], [
             'order.integer' => 'Urutan harus berupa angka',
             'order.min' => 'Urutan minimal 1',
@@ -132,39 +146,45 @@ class ModuleManagementController extends Controller
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
+        try {
+            $module = Module::findOrFail($id);
 
-        $module = Module::findOrFail($id);
-
-        // Handle thumbnail update if provided
-        if ($request->hasFile('thumbnail')) {
-            if ($module->thumbnail) {
-                Storage::delete('public/modules/thumbnails/' . $module->thumbnail);
+            // Handle thumbnail update
+            if ($request->hasFile('thumbnail')) {
+                if ($module->thumbnail) {
+                    Storage::delete('public/modules/thumbnails/' . $module->thumbnail);
+                }
+                $thumbnail = $request->file('thumbnail');
+                $thumbnailPath = $thumbnail->hashName();
+                $thumbnail->storeAs('public/modules/thumbnails', $thumbnailPath);
+                $module->thumbnail = $thumbnailPath;
             }
-            $thumbnail = $request->file('thumbnail');
-            $thumbnailPath = $thumbnail->hashName();
-            $thumbnail->storeAs('public/modules/thumbnails', $thumbnailPath);
-            $module->thumbnail = $thumbnailPath;
+
+            $module->update(array_filter([
+                'order' => $request->order,
+                'type' => $request->type,
+                'estimated_time_min' => $request->estimated_time_min,
+                'title' => $request->title,
+                'subtitle' => $request->subtitle,
+                'description' => $request->description,
+                'is_access_restricted' => $request->has('is_access_restricted') ?
+                    $request->boolean('is_access_restricted') : null,
+                'access_start_at' => $request->access_start_at,
+                'access_end_at' => $request->access_end_at
+            ]));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Module updated successfully',
+                'data' => $module
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update module',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        // Only update fields that were provided in the request
-        $updateData = array_filter($request->only([
-            'order',
-            'type',
-            'estimated_time_min',
-            'title',
-            'subtitle',
-            'description'
-        ]), function ($value) {
-            return $value !== null;
-        });
-
-        $module->update($updateData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Modul berhasil diperbarui',
-            'data' => $module
-        ]);
     }
 
     /**

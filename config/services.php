@@ -37,6 +37,10 @@ return [
         'is_sanitized'   => env('MIDTRANS_IS_SANITIZED', true),
         'is_3ds'         => env('MIDTRANS_IS_3DS', true),
         'callback_url' => env('MIDTRANS_CALLBACK_URL'),
-        ],
-
+    ],
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
+    ],
 ];

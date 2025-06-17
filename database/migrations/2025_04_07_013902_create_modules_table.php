@@ -21,6 +21,9 @@ return new class extends Migration
             $table->string('subtitle')->nullable();
             $table->text('description');
             $table->string('thumbnail')->nullable();
+            $table->boolean('is_access_restricted')->default(false);
+            $table->timestamp('access_start_at')->nullable();
+            $table->timestamp('access_end_at')->nullable();
             $table->timestamps();
         });
     }

@@ -5,6 +5,7 @@ use Database\Seeders\FaqSeeder;
 use Database\Seeders\MaterialsSeeder;
 use Database\Seeders\ModuleContentSeeder;
 use Database\Seeders\ModuleSeeder;
+use Database\Seeders\RegistrationEnrollmentSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\TrainerSeeder;
 use Database\Seeders\UserSeeder;
@@ -22,7 +23,8 @@ class DatabaseSeeder extends Seeder
             MaterialsSeeder::class,
             CourseSeeder::class,
             ModuleSeeder::class,
-            ModuleContentSeeder::class
+            ModuleContentSeeder::class,
+            RegistrationEnrollmentSeeder::class,
         ]);
     }
 }

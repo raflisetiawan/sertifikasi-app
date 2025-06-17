@@ -6,8 +6,13 @@ use App\Events\AssignUserRole;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -65,23 +70,74 @@ class AuthController extends Controller
             ], 401);
         }
 
+        $user->tokens()
+            ->where('expires_at', '<', now())
+            ->delete();
+
         $token = $user->createToken('ApiToken')->plainTextToken;
 
-        $response = [
+        return response([
             'success' => true,
             'user' => $user,
-            'token' => $token
-        ];
+            'token' => $token,
+            'expires_at' => now()->addHours(24)->toDateTimeString()
+        ], 201);
 
         return response($response, 201);
     }
 
-    public function sign_out()
+    public function sign_out(Request $request)
     {
-        auth()->logout();
-        return response()->json([
-            'success'    => true
-        ], 200);
+        try {
+            // Get authorization header
+            $authHeader = $request->header('Authorization');
+
+            if (!$authHeader) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No authorization header found'
+                ], 401);
+            }
+
+            // Extract token from Bearer string
+            $accessToken = str_replace('Bearer ', '', $authHeader);
+
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No token provided'
+                ], 401);
+            }
+
+            // Find and delete the token directly from the database
+            $tokenId = explode('|', $accessToken)[0];
+            $deleted = DB::table('personal_access_tokens')
+                ->where('id', $tokenId)
+                ->delete();
+
+            if (!$deleted) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Token not found or already revoked'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully logged out'
+            ], 200);
+        } catch (\Exception $e) {
+            Log::error('Logout failed:', [
+                'error' => $e->getMessage(),
+                'auth_header' => $request->header('Authorization')
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to logout',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     public function getUserWithRole(Request $request)
@@ -114,5 +170,90 @@ class AuthController extends Controller
         return response()->json([
             'user' => $userData,
         ], 200);
+    }
+
+    public function googleRedirect()
+    {
+        try {
+            $url = Socialite::driver('google')
+                ->stateless()  // Add this
+                ->redirect()
+                ->getTargetUrl();
+
+            return response()->json([
+                'success' => true,
+                'url' => $url
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate Google auth URL',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function googleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')
+                ->stateless()  // Add this
+                ->user();
+
+            $user = User::where('email', $googleUser->email)->first();
+
+            if (!$user) {
+                $user = User::create([
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'google_id' => $googleUser->id,
+                    'avatar' => $googleUser->avatar,
+                    'password' => bcrypt(Str::random(16))
+                ]);
+
+                event(new Registered($user));
+                event(new AssignUserRole($user));
+            }
+
+            $token = $user->createToken('ApiToken')->plainTextToken;
+
+            // Return JSON response instead of redirect
+            return redirect()->away(env('FRONTEND_CALLBACK_URL') . '?token=' . $token);
+        } catch (\Exception $e) {
+            return redirect()->away(
+                env('FRONT_URL') . '/auth/error?message=' . urlencode($e->getMessage())
+            );
+        }
+    }
+    public function refreshToken(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthenticated'
+                ], 401);
+            }
+
+            // Revoke current token
+            $request->user()->currentAccessToken()->delete();
+
+            // Create new token
+            $token = $user->createToken('ApiToken')->plainTextToken;
+
+            return response()->json([
+                'success' => true,
+                'token' => $token,
+                'expires_at' => now()->addHours(24)->toDateTimeString()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -14,7 +14,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->job(new UpdateCourseStatus)->everyMinute();
+        $schedule->job(new UpdateCourseStatus)->daily();
+        $schedule->command('auth:clean-tokens')->daily();
     }
 
     /**

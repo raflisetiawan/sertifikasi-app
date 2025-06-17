@@ -30,6 +30,10 @@ use Illuminate\Support\Facades\Route;
 Route::post('/signup', [AuthController::class, 'sign_up']);
 Route::post('/signin', [AuthController::class, 'sign_in']);
 Route::post('/signout', [AuthController::class, 'sign_out']);
+Route::post('/auth/refresh', [AuthController::class, 'refreshToken']);
+
+Route::get('auth/google', [AuthController::class, 'googleRedirect']);
+Route::get('auth/google/callback', [AuthController::class, 'googleCallback']);
 
 Route::post('password/email', ForgotPasswordController::class);
 Route::post('password/code/check', CodeCheckController::class);
@@ -121,7 +125,6 @@ Route::post('payments/callback', [PaymentController::class, 'handleCallback'])
     ->name('payments.callback');  // Add route name
 
 Route::post('payments/status/update', [PaymentController::class, 'updatePaymentStatus']);
-
 
 // Routes that do not require authentication
 Route::apiResource('contacts', ContactController::class)->except(['destroy']);

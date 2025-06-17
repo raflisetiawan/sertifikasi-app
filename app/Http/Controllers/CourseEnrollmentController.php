@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Module;
 use App\Models\Registration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -100,6 +101,13 @@ class CourseEnrollmentController extends Controller
                         'description' => $module->description,
                         'type' => $module->type,
                         'order' => $module->order,
+                        'is_locked' => $module->is_access_restricted && !$module->isAccessibleNow(),
+                        'access_restriction' => [
+                            'is_restricted' => $module->is_access_restricted,
+                            'start_at' => $module->access_start_at,
+                            'end_at' => $module->access_end_at,
+                            'status' => $this->getAccessStatus($module)
+                        ],
                         'progress' => $progress ? [
                             'status' => $progress->status,
                             'percentage' => $progress->progress_percentage,
@@ -126,4 +134,29 @@ class CourseEnrollmentController extends Controller
             ]
         ]);
     }
+    /**
+ * Get module access status
+ */
+private function getAccessStatus(Module $module): string
+{
+    if (!$module->is_access_restricted) {
+        return 'available';
+    }
+
+    $now = now();
+
+    if ($module->access_start_at && $now->lt($module->access_start_at)) {
+        return 'upcoming';
+    }
+
+    if ($module->access_end_at && $now->gt($module->access_end_at)) {
+        return 'expired';
+    }
+
+    if ($module->isAccessibleNow()) {
+        return 'available';
+    }
+
+    return 'locked';
+}
 }
