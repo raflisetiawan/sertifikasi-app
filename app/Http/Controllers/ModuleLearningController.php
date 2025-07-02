@@ -219,4 +219,43 @@ class ModuleLearningController extends Controller
             ], 500);
         }
     }
+
+    public function getQuizAttempt(Enrollment $enrollment, ModuleContent $content)
+    {
+        try {
+            $quizAttempt = $enrollment->contentProgresses()
+                ->where('module_content_id', $content->id)
+                ->first();
+
+            if (!$quizAttempt || $quizAttempt->score === null) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Quiz attempt not found or not completed for this enrollment and content.'
+                ], 404);
+            }
+
+            $quiz = $content->content;
+            $passed = $quizAttempt->score >= $quiz->passing_score;
+            $allAttemptsUsed = $quizAttempt->attempts >= $quiz->max_attempts;
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'score' => $quizAttempt->score,
+                    'attempts' => $quizAttempt->attempts,
+                    'last_attempt_at' => $quizAttempt->last_attempt_at,
+                    'max_attempts' => $quiz->max_attempts,
+                    'passing_score' => $quiz->passing_score,
+                    'passed' => $passed,
+                    'all_attempts_used' => $allAttemptsUsed,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve quiz attempt',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

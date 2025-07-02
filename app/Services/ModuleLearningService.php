@@ -28,7 +28,7 @@ class ModuleLearningService
             ->firstOrCreate(
                 ['module_id' => $module->id],
                 [
-                    'status' => 'in_progress',
+                    'status' => 'active',
                     'progress_percentage' => 0,
                     'started_at' => now()
                 ]
@@ -36,7 +36,7 @@ class ModuleLearningService
 
         $moduleProgress->update([
             'progress_percentage' => $progressPercentage,
-            'status' => $progressPercentage >= 100 ? 'completed' : 'in_progress',
+            'status' => $progressPercentage >= 100 ? 'completed' : 'active',
             'completed_at' => $progressPercentage >= 100 ? now() : null
         ]);
 
@@ -113,7 +113,6 @@ class ModuleLearningService
                 [
                     'status' => 'in_progress',
                     'started_at' => now(),
-                    'attempts' => $attemptsCount + 1
                 ]
             );
 
@@ -134,6 +133,8 @@ class ModuleLearningService
         }
 
         $score = $this->calculateQuizScore($quiz, $answers);
+
+        $contentProgress->increment('attempts');
 
         $contentProgress->update([
             'status' => 'completed',

@@ -114,6 +114,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/enrollments/{enrollment}/modules/{module}/contents/{content}/submit-practice',
         [ModuleLearningController::class, 'submitPractice']
     );
+
+    Route::get(
+        '/enrollments/{enrollment}/contents/{content}/quiz-attempt',
+        [ModuleLearningController::class, 'getQuizAttempt']
+    );
 });
 // Route::prefix('payments')->group(function () {
 //     Route::post('callback', [PaymentController::class, 'handleCallback']);

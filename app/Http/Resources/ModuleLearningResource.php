@@ -34,7 +34,7 @@ class ModuleLearningResource extends JsonResource
                 'contents' => $module->contents->map(function ($content) use ($contentProgress) {
                     $progress = $contentProgress[$content->id] ?? null;
 
-                    return [
+                    $contentData = [
                         'id' => $content->id,
                         'title' => $content->title,
                         'type' => $content->content_type,
@@ -49,6 +49,17 @@ class ModuleLearningResource extends JsonResource
                             'last_accessed_at' => $progress->updated_at
                         ] : null
                     ];
+
+                    // Add specific quiz details including attempts if content type is quiz
+                    if ($content->content_type === 'quiz' && $content->content) {
+                        $contentData['content'] = array_merge($contentData['content'], [
+                            'max_attempts' => $content->content->max_attempts,
+                            'passing_score' => $content->content->passing_score,
+                            'attempts' => $progress ? $progress->attempts : 0, // Add attempts here for quiz only
+                        ]);
+                    }
+
+                    return $contentData;
                 })
             ]
         ];
@@ -70,10 +81,9 @@ class ModuleLearningResource extends JsonResource
                     'format' => $content->content->format
                 ];
             case 'quiz':
+                // These will be merged in the main toArray method for quiz type
                 return [
                     'time_limit_minutes' => $content->content->time_limit_minutes,
-                    'passing_score' => $content->content->passing_score,
-                    'max_attempts' => $content->content->max_attempts,
                 ];
             case 'assignment':
                 return [
