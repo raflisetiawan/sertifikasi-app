@@ -4,21 +4,27 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ModuleConcept;
-use App\Models\Module;
+use App\Services\ModuleConceptManagementService;
+use App\Http\Requests\Admin\StoreModuleConceptRequest;
+use App\Http\Requests\Admin\UpdateModuleConceptRequest;
+use App\Http\Requests\Admin\ReorderModuleConceptRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ModuleConceptManagementController extends Controller
 {
+    protected $moduleConceptManagementService;
+
+    public function __construct(ModuleConceptManagementService $moduleConceptManagementService)
+    {
+        $this->moduleConceptManagementService = $moduleConceptManagementService;
+    }
+
     /**
      * Display a listing of module concepts.
      */
     public function index($moduleId)
     {
-        $concepts = ModuleConcept::where('module_id', $moduleId)
-            ->orderBy('order')
-            ->get();
-
+        $concepts = $this->moduleConceptManagementService->getModuleConcepts($moduleId);
         return response()->json([
             'success' => true,
             'message' => 'Daftar konsep modul berhasil dimuat',
@@ -29,33 +35,22 @@ class ModuleConceptManagementController extends Controller
     /**
      * Store a newly created module concept.
      */
-    public function store(Request $request)
+    public function store(StoreModuleConceptRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:modules,id',
-            'title' => 'required|string|max:255',
-            'order' => 'required|integer|min:1'
-        ], [
-            'module_id.required' => 'ID modul wajib diisi',
-            'module_id.exists' => 'Modul tidak ditemukan',
-            'title.required' => 'Judul konsep wajib diisi',
-            'title.max' => 'Judul maksimal 255 karakter',
-            'order.required' => 'Urutan wajib diisi',
-            'order.integer' => 'Urutan harus berupa angka',
-            'order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $concept = $this->moduleConceptManagementService->createModuleConcept($request->validated());
+            return response()->json([
+                'success' => true,
+                'message' => 'Konsep modul berhasil ditambahkan',
+                'data' => $concept
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan konsep modul',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $concept = ModuleConcept::create($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Konsep modul berhasil ditambahkan',
-            'data' => $concept
-        ], 201);
     }
 
     /**
@@ -63,98 +58,88 @@ class ModuleConceptManagementController extends Controller
      */
     public function show($id)
     {
-        $concept = ModuleConcept::findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail konsep modul berhasil dimuat',
-            'data' => $concept
-        ]);
+        try {
+            $concept = $this->moduleConceptManagementService->getModuleConceptById($id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail konsep modul berhasil dimuat',
+                'data' => $concept
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Konsep modul tidak ditemukan',
+                'error' => $e->getMessage()
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat detail konsep modul',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Update the specified module concept.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateModuleConceptRequest $request, ModuleConcept $concept)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|string|max:255',
-            'order' => 'sometimes|integer|min:1'
-        ], [
-            'title.max' => 'Judul maksimal 255 karakter',
-            'order.integer' => 'Urutan harus berupa angka',
-            'order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $concept = $this->moduleConceptManagementService->updateModuleConcept($concept, $request->validated());
+            return response()->json([
+                'success' => true,
+                'message' => 'Konsep modul berhasil diperbarui',
+                'data' => $concept
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui konsep modul',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $concept = ModuleConcept::findOrFail($id);
-
-        $updateData = array_filter($request->only([
-            'title',
-            'order'
-        ]), function ($value) {
-            return $value !== null;
-        });
-
-        $concept->update($updateData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Konsep modul berhasil diperbarui',
-            'data' => $concept
-        ]);
     }
 
     /**
      * Remove the specified module concept.
      */
-    public function destroy($id)
+    public function destroy(ModuleConcept $concept)
     {
-        $concept = ModuleConcept::findOrFail($id);
-        $concept->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Konsep modul berhasil dihapus',
-            'data' => null
-        ]);
+        try {
+            $this->moduleConceptManagementService->deleteModuleConcept($concept);
+            return response()->json([
+                'success' => true,
+                'message' => 'Konsep modul berhasil dihapus',
+                'data' => null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus konsep modul',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Reorder module concepts.
      */
-    public function reorder(Request $request)
+    public function reorder(ReorderModuleConceptRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'concepts' => 'required|array',
-            'concepts.*.id' => 'required|exists:module_concepts,id',
-            'concepts.*.order' => 'required|integer|min:1'
-        ], [
-            'concepts.required' => 'Data konsep wajib diisi',
-            'concepts.array' => 'Format data konsep tidak valid',
-            'concepts.*.id.required' => 'ID konsep wajib diisi',
-            'concepts.*.id.exists' => 'Konsep tidak ditemukan',
-            'concepts.*.order.required' => 'Urutan konsep wajib diisi',
-            'concepts.*.order.integer' => 'Urutan harus berupa angka',
-            'concepts.*.order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $this->moduleConceptManagementService->reorderModuleConcepts($request->validated()['concepts']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Urutan konsep berhasil diperbarui',
+                'data' => null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui urutan konsep',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        foreach ($request->concepts as $conceptData) {
-            ModuleConcept::where('id', $conceptData['id'])
-                ->update(['order' => $conceptData['order']]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Urutan konsep berhasil diperbarui',
-            'data' => null
-        ]);
     }
 }

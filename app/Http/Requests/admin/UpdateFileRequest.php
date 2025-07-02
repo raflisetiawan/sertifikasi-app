@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateTextRequest extends FormRequest
+class UpdateFileRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,8 +15,8 @@ class UpdateTextRequest extends FormRequest
     {
         return [
             'title' => 'sometimes|string|max:255',
-            'content' => 'sometimes|string',
-            'format' => 'sometimes|in:markdown,html',
+            'description' => 'nullable|string',
+            'file' => 'nullable|file|max:10240'
         ];
     }
 }

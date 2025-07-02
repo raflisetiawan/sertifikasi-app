@@ -4,21 +4,27 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ModuleExercise;
-use App\Models\Module;
+use App\Services\ModuleExerciseManagementService;
+use App\Http\Requests\Admin\StoreModuleExerciseRequest;
+use App\Http\Requests\Admin\UpdateModuleExerciseRequest;
+use App\Http\Requests\Admin\ReorderModuleExerciseRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 
 class ModuleExerciseManagementController extends Controller
 {
+    protected $moduleExerciseManagementService;
+
+    public function __construct(ModuleExerciseManagementService $moduleExerciseManagementService)
+    {
+        $this->moduleExerciseManagementService = $moduleExerciseManagementService;
+    }
+
     /**
      * Display a listing of module exercises.
      */
     public function index($moduleId)
     {
-        $exercises = ModuleExercise::where('module_id', $moduleId)
-            ->orderBy('order')
-            ->get();
-
+        $exercises = $this->moduleExerciseManagementService->getModuleExercises($moduleId);
         return response()->json([
             'success' => true,
             'message' => 'Daftar latihan modul berhasil dimuat',
@@ -29,32 +35,22 @@ class ModuleExerciseManagementController extends Controller
     /**
      * Store a newly created module exercise.
      */
-    public function store(Request $request)
+    public function store(StoreModuleExerciseRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'module_id' => 'required|exists:modules,id',
-            'description' => 'required|string',
-            'order' => 'required|integer|min:1'
-        ], [
-            'module_id.required' => 'ID modul wajib diisi',
-            'module_id.exists' => 'Modul tidak ditemukan',
-            'description.required' => 'Deskripsi latihan wajib diisi',
-            'order.required' => 'Urutan wajib diisi',
-            'order.integer' => 'Urutan harus berupa angka',
-            'order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $exercise = $this->moduleExerciseManagementService->createModuleExercise($request->validated());
+            return response()->json([
+                'success' => true,
+                'message' => 'Latihan modul berhasil ditambahkan',
+                'data' => $exercise
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan latihan modul',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $exercise = ModuleExercise::create($request->all());
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Latihan modul berhasil ditambahkan',
-            'data' => $exercise
-        ], 201);
     }
 
     /**
@@ -62,97 +58,88 @@ class ModuleExerciseManagementController extends Controller
      */
     public function show($id)
     {
-        $exercise = ModuleExercise::findOrFail($id);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail latihan modul berhasil dimuat',
-            'data' => $exercise
-        ]);
+        try {
+            $exercise = $this->moduleExerciseManagementService->getModuleExerciseById($id);
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail latihan modul berhasil dimuat',
+                'data' => $exercise
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Latihan modul tidak ditemukan',
+                'error' => $e->getMessage()
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memuat detail latihan modul',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Update the specified module exercise.
      */
-    public function update(Request $request, $id)
+    public function update(UpdateModuleExerciseRequest $request, ModuleExercise $exercise)
     {
-        $validator = Validator::make($request->all(), [
-            'description' => 'sometimes|string',
-            'order' => 'sometimes|integer|min:1'
-        ], [
-            'order.integer' => 'Urutan harus berupa angka',
-            'order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $exercise = $this->moduleExerciseManagementService->updateModuleExercise($exercise, $request->validated());
+            return response()->json([
+                'success' => true,
+                'message' => 'Latihan modul berhasil diperbarui',
+                'data' => $exercise
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui latihan modul',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $exercise = ModuleExercise::findOrFail($id);
-
-        $updateData = array_filter($request->only([
-            'description',
-            'order'
-        ]), function ($value) {
-            return $value !== null;
-        });
-
-        $exercise->update($updateData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Latihan modul berhasil diperbarui',
-            'data' => $exercise
-        ]);
     }
 
     /**
      * Remove the specified module exercise.
      */
-    public function destroy($id)
+    public function destroy(ModuleExercise $exercise)
     {
-        $exercise = ModuleExercise::findOrFail($id);
-        $exercise->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Latihan modul berhasil dihapus',
-            'data' => null
-        ]);
+        try {
+            $this->moduleExerciseManagementService->deleteModuleExercise($exercise);
+            return response()->json([
+                'success' => true,
+                'message' => 'Latihan modul berhasil dihapus',
+                'data' => null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus latihan modul',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Reorder module exercises.
      */
-    public function reorder(Request $request)
+    public function reorder(ReorderModuleExerciseRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'exercises' => 'required|array',
-            'exercises.*.id' => 'required|exists:module_exercises,id',
-            'exercises.*.order' => 'required|integer|min:1'
-        ], [
-            'exercises.required' => 'Data latihan wajib diisi',
-            'exercises.array' => 'Format data latihan tidak valid',
-            'exercises.*.id.required' => 'ID latihan wajib diisi',
-            'exercises.*.id.exists' => 'Latihan tidak ditemukan',
-            'exercises.*.order.required' => 'Urutan latihan wajib diisi',
-            'exercises.*.order.integer' => 'Urutan harus berupa angka',
-            'exercises.*.order.min' => 'Urutan minimal 1'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+        try {
+            $this->moduleExerciseManagementService->reorderModuleExercises($request->validated()['exercises']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Urutan latihan berhasil diperbarui',
+                'data' => null
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui urutan latihan',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        foreach ($request->exercises as $exerciseData) {
-            ModuleExercise::where('id', $exerciseData['id'])
-                ->update(['order' => $exerciseData['order']]);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Urutan latihan berhasil diperbarui',
-            'data' => null
-        ]);
     }
 }
