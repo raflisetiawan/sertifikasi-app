@@ -53,11 +53,13 @@ class ModuleContentManagementController extends Controller
         try {
             DB::beginTransaction();
 
-            // Reorder existing contents if needed
-            if ($request->order) {
-                $module->contents()
-                    ->where('order', '>=', $request->order)
-                    ->increment('order');
+            // Validate unique order
+            $orderExists = $module->contents()->where('order', $request->order)->exists();
+            if ($orderExists) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['order' => ['The order has already been taken for this module.']]
+                ], 422);
             }
 
             $content = $module->contents()->create($validator->validated());
@@ -127,16 +129,18 @@ class ModuleContentManagementController extends Controller
         try {
             DB::beginTransaction();
 
-            // Handle order changes if needed
+            // Validate unique order on update
             if ($request->has('order') && $request->order !== $content->order) {
-                if ($request->order > $content->order) {
-                    $module->contents()
-                        ->whereBetween('order', [$content->order + 1, $request->order])
-                        ->decrement('order');
-                } else {
-                    $module->contents()
-                        ->whereBetween('order', [$request->order, $content->order - 1])
-                        ->increment('order');
+                $orderExists = $module->contents()
+                    ->where('id', '!=', $content->id)
+                    ->where('order', $request->order)
+                    ->exists();
+
+                if ($orderExists) {
+                    return response()->json([
+                        'success' => false,
+                        'errors' => ['order' => ['The order has already been taken for this module.']]
+                    ], 422);
                 }
             }
 

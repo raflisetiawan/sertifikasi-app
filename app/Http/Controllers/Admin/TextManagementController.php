@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\UpdateTextRequest;
 use App\Http\Controllers\Controller;
 use App\Models\Text;
-use App\Models\Module;
 use App\Models\ModuleContent;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class TextManagementController extends Controller
 {
@@ -83,7 +83,6 @@ class TextManagementController extends Controller
                 'message' => 'Konten teks berhasil ditambahkan',
                 'data' => $text->load('moduleContent')
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -110,29 +109,13 @@ class TextManagementController extends Controller
     /**
      * Update the specified text
      */
-    public function update(Request $request, $id)
+    public function update(UpdateTextRequest $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'title' => 'string|max:255',
-            'content' => 'string',
-            'format' => 'in:markdown,html'
-        ], [
-            'title.max' => 'Judul maksimal 255 karakter',
-            'format.in' => 'Format harus markdown atau html'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
             DB::beginTransaction();
 
             $text = Text::findOrFail($id);
-            $text->update($validator->validated());
+            $text->update($request->validated());
 
             // Update related module content title if title is changed
             if ($request->has('title')) {
@@ -146,7 +129,6 @@ class TextManagementController extends Controller
                 'message' => 'Konten teks berhasil diperbarui',
                 'data' => $text->load('moduleContent')
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -179,7 +161,6 @@ class TextManagementController extends Controller
                 'success' => true,
                 'message' => 'Konten teks berhasil dihapus'
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([

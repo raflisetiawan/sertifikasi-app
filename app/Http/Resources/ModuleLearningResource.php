@@ -87,6 +87,8 @@ class ModuleLearningResource extends JsonResource
                     'file_url' => $content->content->file_url,
                     'mime_type' => $content->content->mime_type,
                     'file_size' => $content->content->file_size,
+                    'title' => $content->content->title,
+                    'description' => $content->content->description,
                 ];
             case 'practice':
                 return [
