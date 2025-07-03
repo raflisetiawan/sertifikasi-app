@@ -16,13 +16,17 @@ class Enrollment extends Model
         'status',
         'started_at',
         'completed_at',
-        'progress_percentage'
+        'progress_percentage',
+        'final_score',
+        'admin_reviewed_at'
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
         'completed_at' => 'datetime',
-        'progress_percentage' => 'float'
+        'admin_reviewed_at' => 'datetime',
+        'progress_percentage' => 'float',
+        'final_score' => 'float'
     ];
 
     // Relationships
@@ -68,8 +72,19 @@ class Enrollment extends Model
             'progress_percentage' => $percentage
         ]);
 
-        if ($percentage >= 100) {
-            $this->markAsCompleted();
+        if ($percentage >= 100 && $this->status !== 'completed') {
+            $this->update(['status' => 'pending_admin_review']);
         }
+    }
+
+    public function markAsAdminReviewed(float $finalScore = null)
+    {
+        $this->update([
+            'status' => 'completed',
+            'final_score' => $finalScore,
+            'admin_reviewed_at' => now(),
+            'completed_at' => now(), // Ensure completed_at is set when admin reviews
+            'progress_percentage' => 100.0 // Ensure progress is 100%
+        ]);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\PracticeManagementController;
 use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
 use App\Http\Controllers\Admin\VideoManagementController;
+use App\Http\Controllers\Admin\EnrollmentReviewController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\MaterialController;
@@ -126,4 +127,7 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
         Route::delete('/{id}', [FileManagementController::class, 'destroy']);
         Route::get('/{id}/download', [FileManagementController::class, 'download']);
     });
+
+    Route::get('enrollments', [EnrollmentReviewController::class, 'index']);
+    Route::put('enrollments/{enrollment}/review', [EnrollmentReviewController::class, 'review']);
 });
