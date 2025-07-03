@@ -74,9 +74,19 @@ class QuizManagementController extends Controller
     /**
      * Update the specified quiz
      */
-    public function update(UpdateQuizRequest $request, Quiz $quiz)
+    public function update(UpdateQuizRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $quiz = $moduleContent->content;
+
+            if (!$quiz instanceof \App\Models\Quiz) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan kuis.'
+                ], 400);
+            }
+
             $quiz = $this->quizManagementService->updateQuiz($quiz, $request->validated());
             return response()->json([
                 'success' => true,

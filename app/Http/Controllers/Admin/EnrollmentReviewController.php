@@ -5,11 +5,20 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\EnrollmentReviewRequest;
 use App\Models\Enrollment;
+use App\Services\CertificateService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EnrollmentReviewController extends Controller
 {
+    protected $certificateService;
+
+    public function __construct(CertificateService $certificateService)
+    {
+        $this->certificateService = $certificateService;
+    }
+
     /**
      * Display a listing of enrollments that are completed or pending admin review.
      *
@@ -32,6 +41,13 @@ class EnrollmentReviewController extends Controller
         }
 
         $enrollments = $query->latest('updated_at')->paginate(10);
+
+        $enrollments->getCollection()->transform(function ($enrollment) {
+            if ($enrollment->certificate_path) {
+                $enrollment->certificate_url = Storage::disk('public')->url($enrollment->certificate_path);
+            }
+            return $enrollment;
+        });
 
         return response()->json($enrollments);
     }
@@ -60,5 +76,40 @@ class EnrollmentReviewController extends Controller
             'message' => 'Enrollment reviewed and marked as completed successfully.',
             'enrollment' => $enrollment
         ]);
+    }
+
+    /**
+     * Generate certificate for a completed enrollment.
+     *
+     * @param Enrollment $enrollment
+     * @return JsonResponse
+     */
+    public function generateCertificate(Enrollment $enrollment): JsonResponse
+    {
+        if ($enrollment->status !== 'completed') {
+            return response()->json([
+                'message' => 'Certificate can only be generated for completed enrollments.'
+            ], 400);
+        }
+
+        if ($enrollment->certificate_path !== null) {
+            return response()->json([
+                'message' => 'Certificate already generated.',
+                'certificate_url' => Storage::disk('public')->url($enrollment->certificate_path)
+            ], 200);
+        }
+
+        $certificateUrl = $this->certificateService->generateCertificate($enrollment);
+
+        if ($certificateUrl) {
+            return response()->json([
+                'message' => 'Certificate generated successfully.',
+                'certificate_url' => $certificateUrl
+            ]);
+        } else {
+            return response()->json([
+                'message' => 'Failed to generate certificate.'
+            ], 500);
+        }
     }
 }

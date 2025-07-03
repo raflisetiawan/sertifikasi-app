@@ -49,8 +49,19 @@ class QuizManagementService
         return DB::transaction(function () use ($quiz, $data) {
             $quiz->update($data);
 
+            $moduleContentData = [];
             if (isset($data['title'])) {
-                $quiz->moduleContent()->update(['title' => $data['title']]);
+                $moduleContentData['title'] = $data['title'];
+            }
+            if (isset($data['order'])) {
+                $moduleContentData['order'] = $data['order'];
+            }
+            if (isset($data['is_required'])) {
+                $moduleContentData['is_required'] = $data['is_required'];
+            }
+
+            if (!empty($moduleContentData)) {
+                $quiz->moduleContent()->update($moduleContentData);
             }
 
             return $quiz->load('moduleContent');

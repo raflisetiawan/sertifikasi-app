@@ -8,6 +8,7 @@ use App\Services\TextManagementService;
 use App\Http\Requests\Admin\StoreTextRequest;
 use App\Http\Requests\Admin\UpdateTextRequest;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TextManagementController extends Controller
 {
@@ -80,9 +81,19 @@ class TextManagementController extends Controller
     /**
      * Update the specified text
      */
-    public function update(UpdateTextRequest $request, Text $text)
+    public function update(UpdateTextRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $text = $moduleContent->content;
+
+            if (!$text instanceof \App\Models\Text) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan teks.'
+                ], 400);
+            }
+
             $text = $this->textManagementService->updateText($text, $request->validated());
             return response()->json([
                 'success' => true,

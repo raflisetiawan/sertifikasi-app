@@ -75,9 +75,19 @@ class FileManagementController extends Controller
     /**
      * Update the specified file
      */
-    public function update(UpdateFileRequest $request, File $file)
+    public function update(UpdateFileRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $file = $moduleContent->content;
+
+            if (!$file instanceof \App\Models\File) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan file.'
+                ], 400);
+            }
+
             $file = $this->fileManagementService->updateFile($file, $request->validated(), $request->file('file'));
             return response()->json([
                 'success' => true,

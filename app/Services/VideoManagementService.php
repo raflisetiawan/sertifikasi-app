@@ -43,14 +43,22 @@ class VideoManagementService
         return DB::transaction(function () use ($video, $data) {
             $video->update($data);
 
+            $moduleContentData = [];
             if (isset($data['title'])) {
-                $video->moduleContent()->update(['title' => $data['title']]);
+                $moduleContentData['title'] = $data['title'];
+            }
+            if (isset($data['order'])) {
+                $moduleContentData['order'] = $data['order'];
+            }
+            if (isset($data['is_required'])) {
+                $moduleContentData['is_required'] = $data['is_required'];
+            }
+            if (isset($data['duration_seconds'])) {
+                $moduleContentData['minimum_duration_seconds'] = $data['duration_seconds'];
             }
 
-            if (isset($data['duration_seconds'])) {
-                $video->moduleContent()->update([
-                    'minimum_duration_seconds' => $data['duration_seconds']
-                ]);
+            if (!empty($moduleContentData)) {
+                $video->moduleContent()->update($moduleContentData);
             }
 
             return $video->load('moduleContent');

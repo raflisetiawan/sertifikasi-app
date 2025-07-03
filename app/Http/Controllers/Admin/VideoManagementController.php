@@ -80,9 +80,19 @@ class VideoManagementController extends Controller
     /**
      * Update the specified video
      */
-    public function update(UpdateVideoRequest $request, Video $video)
+    public function update(UpdateVideoRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $video = $moduleContent->content;
+
+            if (!$video instanceof \App\Models\Video) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan video.'
+                ], 400);
+            }
+
             $video = $this->videoManagementService->updateVideo($video, $request->validated());
             return response()->json([
                 'success' => true,

@@ -78,6 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('payments/{registration}', [PaymentController::class, 'getPaymentStatus']);
 
     Route::get('/user/dashboard', [UserDashboardController::class, 'index']);
+    Route::get('/user/certificates', [UserDashboardController::class, 'getCertificates']);
     Route::get('/user/courses', [CourseEnrollmentController::class, 'index']);
     Route::get('/user/courses/{id}', [CourseEnrollmentController::class, 'show']);
 
@@ -115,10 +116,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [ModuleLearningController::class, 'submitPractice']
     );
 
-    Route::get(
-        '/enrollments/{enrollment}/contents/{content}/quiz-attempt',
+    Route::get('/enrollments/{enrollment}/contents/{content}/quiz-attempt',
         [ModuleLearningController::class, 'getQuizAttempt']
     );
+
+    // Live Sessions
+    Route::apiResource('live-sessions', \App\Http\Controllers\Api\LiveSessionController::class);
+    Route::get('courses/{courseId}/live-sessions', [\App\Http\Controllers\Api\LiveSessionController::class, 'getLiveSessionsByCourse']);
 });
 // Route::prefix('payments')->group(function () {
 //     Route::post('callback', [PaymentController::class, 'handleCallback']);

@@ -22,7 +22,32 @@ class UpdateVideoRequest extends FormRequest
             'duration_seconds' => 'sometimes|integer|min:1',
             'thumbnail_url' => 'nullable|url',
             'is_downloadable' => 'boolean',
-            'captions' => 'nullable|array'
+            'captions' => 'nullable|array',
+            'order' => [
+                'sometimes',
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $moduleContentId = $this->route('id');
+
+                    $moduleContent = \App\Models\ModuleContent::find($moduleContentId);
+
+                    if ($moduleContent) {
+                        $moduleId = $moduleContent->module_id;
+
+                        $exists = \App\Models\ModuleContent::where('module_id', $moduleId)
+                            ->where('order', $value)
+                            ->where('id', '!=', $moduleContentId)
+                            ->exists();
+
+                        if ($exists) {
+                            $fail('Urutan ini sudah digunakan oleh konten lain dalam modul ini.');
+                        }
+                    }
+                },
+            ],
+            'is_required' => 'sometimes|boolean',
         ];
     }
 }

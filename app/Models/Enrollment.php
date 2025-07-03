@@ -18,7 +18,9 @@ class Enrollment extends Model
         'completed_at',
         'progress_percentage',
         'final_score',
-        'admin_reviewed_at'
+        'admin_reviewed_at',
+        'certificate_number',
+        'certificate_path'
     ];
 
     protected $casts = [

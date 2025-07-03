@@ -50,8 +50,19 @@ class AssignmentManagementService
         return DB::transaction(function () use ($assignment, $data) {
             $assignment->update($data);
 
+            $moduleContentData = [];
             if (isset($data['title'])) {
-                $assignment->moduleContent()->update(['title' => $data['title']]);
+                $moduleContentData['title'] = $data['title'];
+            }
+            if (isset($data['order'])) {
+                $moduleContentData['order'] = $data['order'];
+            }
+            if (isset($data['is_required'])) {
+                $moduleContentData['is_required'] = $data['is_required'];
+            }
+
+            if (!empty($moduleContentData)) {
+                $assignment->moduleContent()->update($moduleContentData);
             }
 
             return $assignment->load('moduleContent');

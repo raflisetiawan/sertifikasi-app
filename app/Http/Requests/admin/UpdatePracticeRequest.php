@@ -23,6 +23,31 @@ class UpdatePracticeRequest extends FormRequest
             'questions.*.options' => 'required_if:questions.*.type,multiple_choice|array',
             'questions.*.answer_key' => 'required',
             'questions.*.explanation' => 'nullable|string',
+            'order' => [
+                'sometimes',
+                'required',
+                'integer',
+                'min:1',
+                function ($attribute, $value, $fail) {
+                    $moduleContentId = $this->route('id');
+
+                    $moduleContent = \App\Models\ModuleContent::find($moduleContentId);
+
+                    if ($moduleContent) {
+                        $moduleId = $moduleContent->module_id;
+
+                        $exists = \App\Models\ModuleContent::where('module_id', $moduleId)
+                            ->where('order', $value)
+                            ->where('id', '!=', $moduleContentId)
+                            ->exists();
+
+                        if ($exists) {
+                            $fail('Urutan ini sudah digunakan oleh konten lain dalam modul ini.');
+                        }
+                    }
+                },
+            ],
+            'is_required' => 'sometimes|boolean',
         ];
     }
 }

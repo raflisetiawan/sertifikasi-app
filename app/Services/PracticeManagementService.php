@@ -47,8 +47,19 @@ class PracticeManagementService
         return DB::transaction(function () use ($practice, $data) {
             $practice->update($data);
 
+            $moduleContentData = [];
             if (isset($data['title'])) {
-                $practice->moduleContent()->update(['title' => $data['title']]);
+                $moduleContentData['title'] = $data['title'];
+            }
+            if (isset($data['order'])) {
+                $moduleContentData['order'] = $data['order'];
+            }
+            if (isset($data['is_required'])) {
+                $moduleContentData['is_required'] = $data['is_required'];
+            }
+
+            if (!empty($moduleContentData)) {
+                $practice->moduleContent()->update($moduleContentData);
             }
 
             return $practice->load('moduleContent');

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('course_id')->constrained()->onDelete('cascade');
             $table->foreignId('registration_id')->constrained()->onDelete('cascade');
-            $table->enum('status', ['active', 'completed', 'expired', 'pending'])->default('pending');
+            $table->enum('status', ['active', 'completed', 'expired', 'pending', 'pending_admin_review'])->default('pending');
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();
             $table->float('progress_percentage')->default(0);

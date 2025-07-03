@@ -6,6 +6,7 @@ use App\Http\Resources\UserDashboardResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UserDashboardController extends Controller
 {
@@ -33,5 +34,29 @@ class UserDashboardController extends Controller
         ]);
 
         return new UserDashboardResource($user);
+    }
+
+    /**
+     * Display a listing of certificates for the authenticated user.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCertificates(Request $request)
+    {
+        $user = Auth::user();
+
+        $certificates = $user->enrollments()
+            ->whereNotNull('certificate_path')
+            ->with('course:id,name,description,image') // Load course details
+            ->latest('completed_at')
+            ->paginate(10);
+
+        $certificates->getCollection()->transform(function ($enrollment) {
+            $enrollment->certificate_url = Storage::disk('public')->url($enrollment->certificate_path);
+            return $enrollment;
+        });
+
+        return response()->json($certificates);
     }
 }

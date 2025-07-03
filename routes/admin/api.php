@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\Admin\PracticeManagementController;
 use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
+use App\Http\Controllers\Admin\TextContentController;
 use App\Http\Controllers\Admin\VideoManagementController;
 use App\Http\Controllers\Admin\EnrollmentReviewController;
 use App\Http\Controllers\CourseController;
@@ -87,6 +88,7 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
         Route::delete('/{id}', [TextManagementController::class, 'destroy']);
     });
 
+
     Route::group(['prefix' => 'quizzes'], function () {
         Route::get('/', [QuizManagementController::class, 'index']);
         Route::post('/', [QuizManagementController::class, 'store']);
@@ -107,7 +109,7 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
         Route::get('/', [VideoManagementController::class, 'index']);
         Route::post('/', [VideoManagementController::class, 'store']);
         Route::get('/{id}', [VideoManagementController::class, 'show']);
-        Route::put('/{id}', [VideoManagementController::class, 'update']);
+        Route::put('/{video}', [VideoManagementController::class, 'update']);
         Route::delete('/{id}', [VideoManagementController::class, 'destroy']);
     });
 
@@ -130,4 +132,5 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
 
     Route::get('enrollments', [EnrollmentReviewController::class, 'index']);
     Route::put('enrollments/{enrollment}/review', [EnrollmentReviewController::class, 'review']);
+    Route::post('enrollments/{enrollment}/generate-certificate', [EnrollmentReviewController::class, 'generateCertificate']);
 });

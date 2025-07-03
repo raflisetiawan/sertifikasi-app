@@ -74,9 +74,19 @@ class AssignmentManagementController extends Controller
     /**
      * Update the specified assignment
      */
-    public function update(UpdateAssignmentRequest $request, Assignment $assignment)
+    public function update(UpdateAssignmentRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $assignment = $moduleContent->content;
+
+            if (!$assignment instanceof \App\Models\Assignment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan tugas.'
+                ], 400);
+            }
+
             $assignment = $this->assignmentManagementService->updateAssignment($assignment, $request->validated());
             return response()->json([
                 'success' => true,

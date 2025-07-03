@@ -7,6 +7,7 @@ use Database\Seeders\ModuleContentSeeder;
 use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RegistrationEnrollmentSeeder;
 use Database\Seeders\RoleSeeder;
+use Database\Seeders\SingleCourseEnrollmentSeeder;
 use Database\Seeders\TrainerSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Database\Seeder;
@@ -25,6 +26,7 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             ModuleContentSeeder::class,
             RegistrationEnrollmentSeeder::class,
+            SingleCourseEnrollmentSeeder::class,
         ]);
     }
 }

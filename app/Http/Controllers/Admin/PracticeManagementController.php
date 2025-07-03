@@ -68,9 +68,19 @@ class PracticeManagementController extends Controller
         }
     }
 
-    public function update(UpdatePracticeRequest $request, Practice $practice)
+    public function update(UpdatePracticeRequest $request, $id)
     {
         try {
+            $moduleContent = \App\Models\ModuleContent::findOrFail($id);
+            $practice = $moduleContent->content;
+
+            if (!$practice instanceof \App\Models\Practice) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan latihan.'
+                ], 400);
+            }
+
             $practice = $this->practiceManagementService->updatePractice($practice, $request->validated());
             return response()->json([
                 'success' => true,

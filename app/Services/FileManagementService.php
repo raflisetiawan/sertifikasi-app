@@ -66,8 +66,19 @@ class FileManagementService
 
             $file->update($data);
 
+            $moduleContentData = [];
             if (isset($data['title'])) {
-                $file->moduleContent()->update(['title' => $data['title']]);
+                $moduleContentData['title'] = $data['title'];
+            }
+            if (isset($data['order'])) {
+                $moduleContentData['order'] = $data['order'];
+            }
+            if (isset($data['is_required'])) {
+                $moduleContentData['is_required'] = $data['is_required'];
+            }
+
+            if (!empty($moduleContentData)) {
+                $file->moduleContent()->update($moduleContentData);
             }
 
             return $file->load('moduleContent');
