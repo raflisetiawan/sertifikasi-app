@@ -119,16 +119,7 @@ Setiap tipe konten di bawah ini memiliki endpoint CRUD (Create, Read, Update, De
 
 Endpoint ini terkait dengan struktur data lama dan mungkin akan dihapus di masa mendatang.
 
-### 6.1. Materials
-
-| Method   | Endpoint                          | Deskripsi                                |
-| :------- | :-------------------------------- | :--------------------------------------- |
-| `POST`   | `/materials`                      | Membuat material baru.                   |
-| `PATCH`  | `/materials/{material}`           | Memperbarui material.                    |
-| `DELETE` | `/materials/{material}`           | Menghapus material.                      |
-| `GET`    | `/materials/by-course/{courseId}` | Mendapatkan material berdasarkan kursus. |
-
-### 6.2. Module Concepts & Exercises
+### 6.1. Module Concepts & Exercises
 
 | Tipe Konten   | Endpoint            | Deskripsi                 |
 | :------------ | :------------------ | :------------------------ |

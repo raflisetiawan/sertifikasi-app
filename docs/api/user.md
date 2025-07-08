@@ -47,8 +47,6 @@ Kembali ke Halaman Utama
 
 | Method | Endpoint                       | Deskripsi                                      |
 | :----- | :----------------------------- | :--------------------------------------------- |
-| `GET`  | `/materials`                   | Mendapatkan semua material (legacy).           |
-| `GET`  | `/materials/{material}`        | Detail satu material (legacy).                 |
 | `GET`  | `/courses/{id}/with-materials` | Mendapatkan kursus beserta materinya (legacy). |
 | `GET`  | `/courses/with-zoom-link`      | Mendapatkan daftar kursus beserta link Zoom.   |
 | `GET`  | `/courses/name-and-id`         | Mendapatkan daftar ID dan nama semua kursus.   |

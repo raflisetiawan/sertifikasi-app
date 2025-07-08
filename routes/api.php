@@ -10,7 +10,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\ForgotPasswordController;
-use App\Http\Controllers\MaterialController;
+
 use App\Http\Controllers\ModuleLearningController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentHistoryController;
@@ -57,14 +57,12 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'getUserWithRole']);
 
-    Route::get('/materials', [MaterialController::class, 'index']);
-    Route::get('/materials/{material}', [MaterialController::class, 'show']);
-
+    
 
     Route::post('/registration', [RegistrationController::class, 'store']);
     Route::get('/user/courses', [RegistrationController::class, 'getUserCourses']);
 
-    Route::get('/courses/{id}/with-materials', [CourseController::class, 'getCourseWithMaterials']);
+    
     Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
     Route::get('/courses/name-and-id', [CourseController::class, 'getIdAndNameCourse']);
 
@@ -116,7 +114,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [ModuleLearningController::class, 'submitPractice']
     );
 
-    Route::get('/enrollments/{enrollment}/contents/{content}/quiz-attempt',
+    Route::get(
+        '/enrollments/{enrollment}/contents/{content}/quiz-attempt',
         [ModuleLearningController::class, 'getQuizAttempt']
     );
 

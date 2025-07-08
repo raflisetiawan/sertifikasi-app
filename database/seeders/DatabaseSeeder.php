@@ -2,7 +2,7 @@
 
 use Database\Seeders\CourseSeeder;
 use Database\Seeders\FaqSeeder;
-use Database\Seeders\MaterialsSeeder;
+
 use Database\Seeders\ModuleContentSeeder;
 use Database\Seeders\ModuleSeeder;
 use Database\Seeders\RegistrationEnrollmentSeeder;
@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             FaqSeeder::class,
             TrainerSeeder::class,
-            MaterialsSeeder::class,
+            
             CourseSeeder::class,
             ModuleSeeder::class,
             ModuleContentSeeder::class,

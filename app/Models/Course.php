@@ -36,24 +36,13 @@ class Course extends Model
         'facility' => 'array',
     ];
 
-    public function materials()
-    {
-        return $this->hasMany(Material::class);
-    }
-
     public function trainers()
     {
         return $this->belongsToMany(Trainer::class, 'course_trainer');
-    }
-
-    public function zoomLink()
-    {
-        return $this->hasOne(CourseZoomLink::class);
     }
 
     public function modules()
     {
         return $this->hasMany(Module::class)->orderBy('order');
     }
-
 }

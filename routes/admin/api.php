@@ -10,17 +10,17 @@ use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\Admin\PracticeManagementController;
 use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
-use App\Http\Controllers\Admin\TextContentController;
 use App\Http\Controllers\Admin\VideoManagementController;
 use App\Http\Controllers\Admin\EnrollmentReviewController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
-use App\Http\Controllers\MaterialController;
+
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\ZoomLinkController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/courses', [CourseController::class, 'getCourseTableWithZoomLink']);
 Route::post('/course', [CourseController::class, 'store']);
 Route::delete('/course/{id}', [CourseController::class, 'destroy']);
 Route::patch('/course/{id}', [CourseController::class, 'update']);
@@ -35,11 +35,6 @@ Route::post('/trainers', [TrainerController::class, 'store']);
 Route::put('/trainers/{trainer}', [TrainerController::class, 'update']);
 Route::delete('/trainers/{trainer}', [TrainerController::class, 'destroy']);
 Route::put('/trainers/{trainer}/toggle-starred', [TrainerController::class, 'toggleStarred']);
-
-Route::post('/materials', [MaterialController::class, 'store']);
-Route::patch('/materials/{material}', [MaterialController::class, 'update']);
-Route::delete('/materials/{material}', [MaterialController::class, 'destroy']);
-Route::get('/materials/by-course/{courseId}', [MaterialController::class, 'getMaterialsByCourse']);
 
 Route::get('/course-registrant', [RegistrationController::class, 'index']);
 Route::get('/course-registrant/{registrationId}', [RegistrationController::class, 'detailRegistration']);
