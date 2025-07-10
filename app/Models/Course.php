@@ -23,10 +23,7 @@ class Course extends Model
         'status',
         'benefit',
         'guidelines',
-        'syllabus_path',
-        'certificate_example_path',
-        'certificate_template_path',
-        'schedule_path'
+        'syllabus_path'
     ];
 
     protected $casts = [

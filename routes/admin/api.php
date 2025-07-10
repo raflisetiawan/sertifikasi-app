@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/courses', [CourseController::class, 'getCourseTableWithZoomLink']);
 Route::post('/course', [CourseController::class, 'store']);
 Route::delete('/course/{id}', [CourseController::class, 'destroy']);
-Route::patch('/course/{id}', [CourseController::class, 'update']);
+Route::post('/course/{id}', [CourseController::class, 'update']);
 Route::patch('/course/updateStatus/{id}', [CourseController::class, 'editCourseStatus']);
 Route::post('/course/{id}/upload-certificate', [CourseController::class, 'uploadCertificateTemplate']);
 
