@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CourseBenefitController;
+use App\Http\Controllers\Admin\ForumController;
 use App\Http\Controllers\Admin\ModuleManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChangePasswordController;
@@ -10,6 +11,9 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEnrollmentController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\ForgotPasswordController;
+
+use App\Http\Controllers\PostController;
+use App\Http\Controllers\ThreadController;
 
 use App\Http\Controllers\ModuleLearningController;
 use App\Http\Controllers\PaymentController;
@@ -57,12 +61,12 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'getUserWithRole']);
 
-    
+
 
     Route::post('/registration', [RegistrationController::class, 'store']);
     Route::get('/user/courses', [RegistrationController::class, 'getUserCourses']);
 
-    
+
     Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
     Route::get('/courses/name-and-id', [CourseController::class, 'getIdAndNameCourse']);
 
@@ -122,6 +126,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Live Sessions
     Route::apiResource('live-sessions', \App\Http\Controllers\Api\LiveSessionController::class);
     Route::get('courses/{courseId}/live-sessions', [\App\Http\Controllers\Api\LiveSessionController::class, 'getLiveSessionsByCourse']);
+
+    // Forum routes for specific courses
+    Route::get('courses/{course}/forum', [ForumController::class, 'show']);
+    Route::post('forums/{forum}/threads', [ThreadController::class, 'store']);
+    Route::get('threads/{thread}', [ThreadController::class, 'show']);
+    Route::put('threads/{thread}', [ThreadController::class, 'update']);
+    Route::delete('threads/{thread}', [ThreadController::class, 'destroy']);
+    Route::post('threads/{thread}/posts', [PostController::class, 'store']);
+    Route::put('posts/{post}', [PostController::class, 'update']);
+    Route::delete('posts/{post}', [PostController::class, 'destroy']);
 });
 // Route::prefix('payments')->group(function () {
 //     Route::post('callback', [PaymentController::class, 'handleCallback']);

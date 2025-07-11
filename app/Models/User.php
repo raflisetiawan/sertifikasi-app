@@ -72,15 +72,10 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Registration::class);
     }
 
-    public function createToken(string $name, array $abilities = ['*'])
-    {
-        $token = $this->tokens()->create([
-            'name' => $name,
-            'token' => hash('sha256', $plainTextToken = Str::random(40)),
-            'abilities' => $abilities,
-            'expires_at' => now()->addHours(24),
-        ]);
+    
 
-        return new NewAccessToken($token, $token->getKey() . '|' . $plainTextToken);
+    public function isEnrolledIn(Course $course): bool
+    {
+        return $this->enrollments()->where('course_id', $course->id)->exists();
     }
 }

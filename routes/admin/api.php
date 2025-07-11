@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\QuizManagementController;
 use App\Http\Controllers\Admin\TextManagementController;
 use App\Http\Controllers\Admin\VideoManagementController;
 use App\Http\Controllers\Admin\EnrollmentReviewController;
+use App\Http\Controllers\Admin\ForumController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 
@@ -67,7 +68,7 @@ Route::post('module-exercises/reorder', [ModuleExerciseManagementController::cla
 
 Route::resource('course_benefits', CourseBenefitController::class);
 
-Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
+Route::group(['prefix' => 'admin'], function () {
     Route::get('modules/{module}/contents', [ModuleContentManagementController::class, 'index']);
     Route::post('modules/{module}/contents', [ModuleContentManagementController::class, 'store']);
     Route::get('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'show']);
@@ -128,4 +129,7 @@ Route::group(['prefix' => 'admin', 'namespace' => 'Admin'], function () {
     Route::get('enrollments', [EnrollmentReviewController::class, 'index']);
     Route::put('enrollments/{enrollment}/review', [EnrollmentReviewController::class, 'review']);
     Route::post('enrollments/{enrollment}/generate-certificate', [EnrollmentReviewController::class, 'generateCertificate']);
+
+    // Forum management for specific courses
+    Route::apiResource('courses.forums', ForumController::class)->shallow();
 });

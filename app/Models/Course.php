@@ -42,4 +42,9 @@ class Course extends Model
     {
         return $this->hasMany(Module::class)->orderBy('order');
     }
+
+    public function forum()
+    {
+        return $this->hasOne(Forum::class);
+    }
 }

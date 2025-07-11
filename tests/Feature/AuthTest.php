@@ -2,12 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
+    use RefreshDatabase;
     /**
      * A basic feature test example.
      */
@@ -20,6 +22,7 @@ class AuthTest extends TestCase
                 'password' => 'password',
                 'password_confirmation' => 'password',
                 'email' => 'sallsy@gmail.com',
+                'phone_number' => '081234567890',
             ]
         );
 
@@ -63,7 +66,13 @@ class AuthTest extends TestCase
 
     public function test_signout(): void
     {
-        $response = $this->postJson('api/signout');
+        $user = User::factory()->create();
+        $token = $user->createToken('test-token')->plainTextToken;
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->postJson('/api/signout');
+
         $response->assertStatus(200);
     }
 }
