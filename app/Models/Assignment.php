@@ -21,7 +21,8 @@ class Assignment extends Model
 
     protected $casts = [
         'submission_requirements' => 'array',
-        'due_date' => 'datetime'
+        'due_date' => 'datetime',
+        'allowed_file_types' => 'array'
     ];
 
     public function moduleContent()

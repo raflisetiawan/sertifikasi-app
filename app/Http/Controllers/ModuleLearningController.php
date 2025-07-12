@@ -139,6 +139,7 @@ class ModuleLearningController extends Controller
 
     public function submitAssignment(AssignmentSubmissionRequest $request, Enrollment $enrollment, Module $module, ModuleContent $content)
     {
+        Log::debug($request->all());
         try {
             DB::beginTransaction();
 

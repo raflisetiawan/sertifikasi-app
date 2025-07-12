@@ -8,6 +8,7 @@ use App\Models\Enrollment;
 use App\Models\ModuleContent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class TrainerAssignmentController extends Controller
 {
@@ -54,6 +55,7 @@ class TrainerAssignmentController extends Controller
 
     public function gradeSubmission(Request $request, Enrollment $enrollment, ModuleContent $moduleContent)
     {
+        Log::debug($request->all());
         /** @var \App\Models\User $user */
         $user = Auth::user();
 

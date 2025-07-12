@@ -21,9 +21,9 @@ class StoreAssignmentRequest extends FormRequest
             'submission_requirements' => 'required|array',
             'due_date' => 'required|date|after:now',
             'max_file_size_mb' => 'required|integer|min:1|max:100',
-            'allowed_file_types' => 'required|string',
+            'allowed_file_types' => 'required|array',
             'order' => 'required|integer|min:0',
-            'is_required' => 'boolean'
+            'is_required' => 'required|boolean'
         ];
     }
 
@@ -46,9 +46,11 @@ class StoreAssignmentRequest extends FormRequest
             'max_file_size_mb.min' => 'Ukuran file minimal 1MB',
             'max_file_size_mb.max' => 'Ukuran file maksimal 100MB',
             'allowed_file_types.required' => 'Tipe file yang diizinkan wajib diisi',
+            'allowed_file_types.array' => 'Tipe file harus berupa array',
             'order.required' => 'Urutan wajib diisi',
             'order.integer' => 'Urutan harus berupa angka',
-            'order.min' => 'Urutan minimal 0'
+            'order.min' => 'Urutan minimal 0',
+            'is_required.required' => 'Status is_required wajib diisi'
         ];
     }
 }

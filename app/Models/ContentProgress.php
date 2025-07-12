@@ -17,7 +17,9 @@ class ContentProgress extends Model
         'started_at',
         'score',
         'attempts',
-        'last_attempt_at'
+        'last_attempt_at',
+        'submission_details',
+        'feedback'
     ];
 
     protected $casts = [

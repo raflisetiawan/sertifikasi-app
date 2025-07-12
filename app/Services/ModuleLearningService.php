@@ -44,7 +44,7 @@ class ModuleLearningService
             $this->unlockNextModule($enrollment, $module);
             $this->updateEnrollmentProgress($enrollment);
         }
-        
+
         return null;
     }
 
@@ -219,7 +219,7 @@ class ModuleLearningService
 
         $this->updateModuleProgress($enrollment, $content->module);
 
-        return $contentProgress;
+        return $contentProgress->fresh();
     }
 
     public function handlePracticeSubmission(Enrollment $enrollment, ModuleContent $content, array $answers): array

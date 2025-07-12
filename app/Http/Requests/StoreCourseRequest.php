@@ -43,9 +43,8 @@ class StoreCourseRequest extends FormRequest
                 'after:operational_start'
             ],
             'benefit' => 'required|string|min:12',
-            'guidelines' => 'required|file|mimes:pdf|max:10240', // 10MB max
-            
-            'syllabus' => 'required|file|mimes:pdf|max:10240'
+            'guidelines' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
+            'syllabus' => 'nullable|file|mimes:pdf|max:10240'
         ];
     }
 
@@ -84,7 +83,7 @@ class StoreCourseRequest extends FormRequest
             'guidelines.required' => 'Pedoman kelas harus diupload',
             'guidelines.mimes' => 'Format pedoman harus PDF',
             'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
-            
+
             'syllabus.required' => 'Silabus harus diupload',
             'syllabus.mimes' => 'Format silabus harus PDF',
             'syllabus.max' => 'Ukuran silabus maksimal 10MB'

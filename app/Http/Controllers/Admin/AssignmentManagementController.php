@@ -7,6 +7,8 @@ use App\Models\Assignment;
 use App\Services\AssignmentManagementService;
 use App\Http\Requests\Admin\StoreAssignmentRequest;
 use App\Http\Requests\Admin\UpdateAssignmentRequest;
+use App\Models\ModuleContent;
+use App\Models\ContentProgress;
 use Illuminate\Http\Request;
 
 class AssignmentManagementController extends Controller
@@ -52,22 +54,47 @@ class AssignmentManagementController extends Controller
     }
 
     /**
-     * Display the specified assignment
+     * Display the specified assignment and its submissions.
      */
     public function show($id)
     {
         try {
-            $assignment = $this->assignmentManagementService->getAssignmentById($id);
+            // Find the module content by its ID
+            $moduleContent = ModuleContent::with('content')->findOrFail($id);
+
+            // Ensure the content is an assignment
+            if (!$moduleContent->content instanceof Assignment) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Konten yang diberikan bukan tugas.'
+                ], 400);
+            }
+
+            $assignment = $moduleContent->content;
+
+            // Get all content progress for this assignment, including submission and user details
+            $submissions = ContentProgress::with(['submission', 'enrollment.user'])
+                ->where('module_content_id', $moduleContent->id)
+                ->get();
+
             return response()->json([
                 'success' => true,
-                'data' => $assignment
+                'data' => [
+                    'assignment' => $assignment,
+                    'submissions' => $submissions,
+                ]
             ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tugas tidak ditemukan.'
+            ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Tugas tidak ditemukan',
+                'message' => 'Gagal mengambil data tugas.',
                 'error' => $e->getMessage()
-            ], 404);
+            ], 500);
         }
     }
 
