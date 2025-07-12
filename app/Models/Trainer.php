@@ -10,7 +10,7 @@ class Trainer extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'email', 'image', 'qualification', 'description', 'starred'];
+    protected $fillable = ['name', 'email', 'image', 'qualification', 'description', 'starred', 'user_id'];
     protected function getTrainerProfile(): Attribute
     {
         return Attribute::make(
@@ -21,5 +21,10 @@ class Trainer extends Model
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'course_trainer');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

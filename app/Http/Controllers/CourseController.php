@@ -32,7 +32,9 @@ class CourseController extends Controller
             'status' => 'not_started',
         ]));
 
-        $course->trainers()->attach($validated['trainer_ids']);
+        if ($request->has('trainer_ids')) {
+            $course->trainers()->sync($request->input('trainer_ids'));
+        }
 
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
     }
@@ -70,8 +72,8 @@ class CourseController extends Controller
 
         $course->update($validated);
 
-        if (isset($validated['trainer_ids'])) {
-            $course->trainers()->sync($validated['trainer_ids']);
+        if ($request->has('trainer_ids')) {
+            $course->trainers()->sync($request->input('trainer_ids'));
         }
 
         return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $course);

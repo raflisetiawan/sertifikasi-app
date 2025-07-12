@@ -9,6 +9,7 @@ use Database\Seeders\RegistrationEnrollmentSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SingleCourseEnrollmentSeeder;
 use Database\Seeders\TrainerSeeder;
+use Database\Seeders\TrainerUserSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Database\Seeder;
 
@@ -19,9 +20,9 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleSeeder::class,
             UserSeeder::class,
+            TrainerUserSeeder::class,
             FaqSeeder::class,
             TrainerSeeder::class,
-            
             CourseSeeder::class,
             ModuleSeeder::class,
             ModuleContentSeeder::class,

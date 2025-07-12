@@ -61,8 +61,6 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', [AuthController::class, 'getUserWithRole']);
 
-
-
     Route::post('/registration', [RegistrationController::class, 'store']);
     Route::get('/user/courses', [RegistrationController::class, 'getUserCourses']);
 

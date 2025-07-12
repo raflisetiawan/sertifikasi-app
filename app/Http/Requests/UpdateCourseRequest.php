@@ -48,8 +48,7 @@ class UpdateCourseRequest extends FormRequest
             ],
             'benefit' => 'sometimes|required|string|min:12',
             'guidelines' => 'nullable|file|mimes:pdf|max:10240',
-            'trainer_ids' => 'sometimes|required|array|min:1',
-            'trainer_ids.*' => 'exists:trainers,id',
+            
             'syllabus' => 'nullable|file|mimes:pdf|max:10240',
             'status' => 'sometimes|required|in:not_started,ongoing,completed'
         ];
@@ -78,8 +77,7 @@ class UpdateCourseRequest extends FormRequest
             'benefit.min' => 'Benefit minimal 50 karakter',
             'guidelines.mimes' => 'Format pedoman harus PDF',
             'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
-            'trainer_ids.min' => 'Minimal pilih 1 trainer',
-            'trainer_ids.*.exists' => 'Trainer tidak valid',
+            
             'syllabus.mimes' => 'Format silabus harus PDF',
             'syllabus.max' => 'Ukuran silabus maksimal 10MB',
             'status.in' => 'Status tidak valid'

@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Trainer;
+use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Hash;
 
 class TrainerController extends Controller
 {
@@ -48,15 +51,32 @@ class TrainerController extends Controller
     {
         $request->validate([
             'name' => 'required|string',
-            'email' => 'required|email|unique:trainers,email',
+            'email' => 'required|email|unique:users,email|unique:trainers,email',
+            'password' => 'required|string|min:8',
             'qualification' => 'required|string',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust the validation rules for images
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $trainer = Trainer::create($request->all());
+        $trainerRoleId = Role::where('name', 'trainer')->first()->id;
 
-        // Upload and store the image if provided
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role_id' => $trainerRoleId,
+            'email_verified_at' => now(),
+        ]);
+
+        $trainer = Trainer::create([
+            'user_id' => $user->id,
+            'name' => $request->name,
+            'email' => $request->email,
+            'qualification' => $request->qualification,
+            'description' => $request->description,
+            'starred' => $request->starred ?? false,
+        ]);
+
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('trainers/images', 'public');
             $trainer->update(['image' => $imagePath]);
@@ -74,20 +94,32 @@ class TrainerController extends Controller
      */
     public function update(Request $request, Trainer $trainer)
     {
+        $emailValidation = ['required', 'email', Rule::unique('trainers')->ignore($trainer->id)];
+
+        if ($trainer->user) {
+            $emailValidation[] = Rule::unique('users')->ignore($trainer->user->id);
+        }
+
         $request->validate([
             'name' => 'required|string',
-            'email' => ['required', 'email', Rule::unique('trainers')->ignore($trainer->id)],
-            'phone' => 'nullable|string',
+            'email' => $emailValidation,
             'qualification' => 'required|string',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Adjust the validation rules for images
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $trainer->update($request->all());
+        // Update associated User record
+        if ($trainer->user) {
+            $trainer->user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+            ]);
+        }
+
+        $trainer->update($request->except(['email', 'user_id'])); // Exclude email and user_id from trainer update
 
         // Upload and store the image if provided
         if ($request->hasFile('image')) {
-            // Delete the old image if it exists
             if ($trainer->image) {
                 Storage::disk('public')->delete($trainer->image);
             }
@@ -110,6 +142,11 @@ class TrainerController extends Controller
         // Delete the trainer's image if it exists
         if ($trainer->image) {
             Storage::disk('public')->delete($trainer->image);
+        }
+
+        // Delete the associated User record
+        if ($trainer->user) {
+            $trainer->user->delete();
         }
 
         $trainer->delete();

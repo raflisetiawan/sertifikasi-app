@@ -78,4 +78,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->enrollments()->where('course_id', $course->id)->exists();
     }
+
+    public function trainer()
+    {
+        return $this->hasOne(Trainer::class);
+    }
+
+    public function isTrainer(): bool
+    {
+        return $this->role && $this->role->name === 'trainer';
+    }
 }

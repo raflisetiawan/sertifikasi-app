@@ -25,5 +25,12 @@ class RoleSeeder extends Seeder
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+
+        // Add trainer role
+        DB::table('roles')->insert([
+            'name' => 'trainer',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 }

@@ -17,6 +17,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\FaqController;
 
 use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\Admin\AdminCourseTrainerController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\ZoomLinkController;
 use Illuminate\Support\Facades\Route;
@@ -36,6 +37,12 @@ Route::post('/trainers', [TrainerController::class, 'store']);
 Route::put('/trainers/{trainer}', [TrainerController::class, 'update']);
 Route::delete('/trainers/{trainer}', [TrainerController::class, 'destroy']);
 Route::put('/trainers/{trainer}/toggle-starred', [TrainerController::class, 'toggleStarred']);
+
+// Course Trainer Management
+Route::post('/courses/{course}/trainers', [AdminCourseTrainerController::class, 'attach']);
+Route::delete('/courses/{course}/trainers/{trainer}', [AdminCourseTrainerController::class, 'detach']);
+Route::get('/courses/{course}/trainers', [AdminCourseTrainerController::class, 'index']);
+Route::post('/courses/{course}/trainers/sync', [AdminCourseTrainerController::class, 'sync']);
 
 Route::get('/course-registrant', [RegistrationController::class, 'index']);
 Route::get('/course-registrant/{registrationId}', [RegistrationController::class, 'detailRegistration']);
