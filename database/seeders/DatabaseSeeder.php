@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\BenefitSeeder;
 use Database\Seeders\CourseSeeder;
 use Database\Seeders\FaqSeeder;
 
@@ -28,6 +29,7 @@ class DatabaseSeeder extends Seeder
             ModuleContentSeeder::class,
             RegistrationEnrollmentSeeder::class,
             SingleCourseEnrollmentSeeder::class,
+            BenefitSeeder::class,
         ]);
     }
 }

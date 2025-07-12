@@ -22,9 +22,9 @@ class ModuleFactory extends Factory
     public function definition()
     {
         return [
-            'course_id' => \App\Models\Course::factory(),
+            'course_id' => null, // Will be set by seeder
             'title' => $this->faker->sentence,
-            'order' => $this->faker->unique()->numberBetween(1, 100),
+            'order' => $this->faker->numberBetween(1, 100), // Will be set by seeder
             'type' => $this->faker->randomElement(['prework', 'module', 'final']),
             'estimated_time_min' => $this->faker->numberBetween(10, 120),
             'subtitle' => $this->faker->sentence,

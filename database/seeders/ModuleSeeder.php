@@ -2,75 +2,73 @@
 
 namespace Database\Seeders;
 
+use App\Models\Course;
 use App\Models\Module;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class ModuleSeeder extends Seeder
 {
+    protected $faker;
+
     public function run()
     {
-        $courseId = 1; // Assuming course ID is 1
+        $this->faker = \Faker\Factory::create();
+        $courses = Course::all();
 
-        $modules = [
-            [
-                'course_id' => $courseId,
-                'order' => 1,
-                'type' => 'prework',
-                'estimated_time_min' => 60,
-                'title' => 'Introduction to Laravel',
-                'subtitle' => 'Getting Started with Laravel',
-                'description' => 'Learn the basics of Laravel framework',
-                'is_access_restricted' => false, // Always accessible
-                'access_start_at' => null,
-                'access_end_at' => null
-            ],
-            [
-                'course_id' => $courseId,
-                'order' => 2,
-                'type' => 'module',
-                'estimated_time_min' => 120,
-                'title' => 'Database and Migration',
-                'subtitle' => 'Working with Databases',
-                'description' => 'Learn database management in Laravel',
-                'is_access_restricted' => true, // Time-restricted access
-                'access_start_at' => Carbon::now(),
-                'access_end_at' => Carbon::now()->addDays(7) // Available for 7 days
-            ],
-            [
-                'course_id' => $courseId,
-                'order' => 3,
-                'type' => 'module',
-                'estimated_time_min' => 90,
-                'title' => 'Authentication & Authorization',
-                'subtitle' => 'User Management in Laravel',
-                'description' => 'Implement user authentication and authorization',
-                'is_access_restricted' => true,
-                'access_start_at' => Carbon::now()->addDays(7), // Starts after module 2
-                'access_end_at' => Carbon::now()->addDays(14) // Available for 7 days
-            ],
-            [
-                'course_id' => $courseId,
-                'order' => 4,
-                'type' => 'final',
-                'estimated_time_min' => 180,
-                'title' => 'Final Project',
-                'subtitle' => 'Build a Complete Web Application',
-                'description' => 'Apply your knowledge in a real project',
-                'is_access_restricted' => true,
-                'access_start_at' => Carbon::now()->addDays(14), // Starts after module 3
-                'access_end_at' => Carbon::now()->addDays(30) // Available for 16 days
-            ]
-        ];
+        if ($courses->isEmpty()) {
+            $this->command->info('No courses found, please seed courses first.');
+            return;
+        }
 
-        // Create modules with different access patterns
-        foreach ($modules as $moduleData) {
-            $module = Module::create($moduleData);
+        foreach ($courses as $course) {
+            $this->command->info("Seeding modules for course: {$course->name} (ID: {$course->id})");
 
-            // Log creation for verification
-            $this->command->info("Created module: {$module->title}");
-            if ($module->is_access_restricted) {
-                $this->command->info("Access period: {$module->access_start_at} to {$module->access_end_at}");
+            $modulesData = [
+                [
+                    'type' => 'prework',
+                    'title' => 'Introduction to ' . $course->name,
+                    'subtitle' => 'Getting Started',
+                    'description' => $this->faker->paragraph,
+                    'is_access_restricted' => false,
+                    'access_start_at' => null,
+                    'access_end_at' => null
+                ],
+                [
+                    'type' => 'module',
+                    'title' => 'Core Concepts of ' . $course->name,
+                    'subtitle' => 'Deep Dive',
+                    'description' => $this->faker->paragraph,
+                    'is_access_restricted' => true,
+                    'access_start_at' => Carbon::now(),
+                    'access_end_at' => Carbon::now()->addDays(7)
+                ],
+                [
+                    'type' => 'module',
+                    'title' => 'Advanced Topics in ' . $course->name,
+                    'subtitle' => 'Mastering Skills',
+                    'description' => $this->faker->paragraph,
+                    'is_access_restricted' => true,
+                    'access_start_at' => Carbon::now()->addDays(7),
+                    'access_end_at' => Carbon::now()->addDays(14)
+                ],
+                [
+                    'type' => 'final',
+                    'title' => 'Final Project for ' . $course->name,
+                    'subtitle' => 'Apply Your Knowledge',
+                    'description' => $this->faker->paragraph,
+                    'is_access_restricted' => true,
+                    'access_start_at' => Carbon::now()->addDays(14),
+                    'access_end_at' => Carbon::now()->addDays(30)
+                ]
+            ];
+
+            foreach ($modulesData as $order => $moduleData) {
+                Module::factory()->create(array_merge($moduleData, [
+                    'course_id' => $course->id,
+                    'order' => $order + 1,
+                    'estimated_time_min' => $this->faker->numberBetween(60, 180),
+                ]));
             }
         }
     }

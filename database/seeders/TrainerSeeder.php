@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Trainer;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\File;
+use Illuminate\Support\Facades\Storage;
 
 class TrainerSeeder extends Seeder
 {
@@ -13,16 +14,25 @@ class TrainerSeeder extends Seeder
      */
     public function run(): void
     {
-        for ($i = 1; $i <= 9; $i++) {
-            DB::table('trainers')->insert([
-                'name' => "Trainer {$i}",
-                'email' => "trainer{$i}@example.com",
-                'qualification' => "Qualification {$i}",
-                'description' => "Description of Trainer {$i}",
-                'image' => null, // Empty image
-                'starred' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
+        // Ensure the destination directory exists
+        Storage::disk('public')->makeDirectory('trainers/images');
+
+        $sourcePath = public_path('img/trainer-example');
+        $imageFiles = \Illuminate\Support\Facades\File::files($sourcePath);
+
+        if (empty($imageFiles)) {
+            $this->command->info('No images found in public/img/trainer-example.');
+            return;
+        }
+
+        for ($i = 0; $i < 4; $i++) {
+            $randomImage = $imageFiles[array_rand($imageFiles)];
+            
+            // Store the file and get the new path (e.g., trainers/images/unique_filename.jpg)
+            $fullPath = Storage::disk('public')->putFile('trainers/images', new File($randomImage->getRealPath()));
+            
+            Trainer::factory()->create([
+                'image' => $fullPath,
             ]);
         }
     }
