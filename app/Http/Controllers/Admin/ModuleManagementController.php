@@ -8,10 +8,16 @@ use App\Services\ModuleManagementService;
 use App\Http\Requests\Admin\StoreModuleRequest;
 use App\Http\Requests\Admin\UpdateModuleRequest;
 use App\Http\Requests\Admin\ReorderModuleRequest;
-use Illuminate\Http\Request;
+use App\Http\Resources\ModuleResource;
+use App\Http\Traits\ApiResponse;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class ModuleManagementController extends Controller
 {
+    use ApiResponse;
+
     protected $moduleManagementService;
 
     public function __construct(ModuleManagementService $moduleManagementService)
@@ -25,34 +31,18 @@ class ModuleManagementController extends Controller
     public function index($courseId)
     {
         $modules = $this->moduleManagementService->getModulesByCourse($courseId);
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar modul berhasil dimuat',
-            'data' => $modules
-        ]);
+        return $this->success(ModuleResource::collection($modules), 'Daftar modul berhasil dimuat');
     }
 
     public function show($id)
     {
         try {
             $module = $this->moduleManagementService->getModuleById($id);
-            return response()->json([
-                'success' => true,
-                'message' => 'Detail modul berhasil dimuat',
-                'data' => $module
-            ]);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Modul tidak ditemukan',
-                'error' => $e->getMessage()
-            ], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat detail modul',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->success(new ModuleResource($module), 'Detail modul berhasil dimuat');
+        } catch (ModelNotFoundException $e) {
+            return $this->error('Modul tidak ditemukan', 404, $e->getMessage());
+        } catch (Exception $e) {
+            return $this->error('Gagal memuat detail modul', 500, $e->getMessage());
         }
     }
 
@@ -63,17 +53,9 @@ class ModuleManagementController extends Controller
     {
         try {
             $module = $this->moduleManagementService->createModule($request->validated(), $request->file('thumbnail'));
-            return response()->json([
-                'success' => true,
-                'message' => 'Modul berhasil ditambahkan',
-                'data' => $module
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menambahkan modul',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->success(new ModuleResource($module), 'Modul berhasil ditambahkan', 201);
+        } catch (Exception $e) {
+            return $this->error('Gagal menambahkan modul', 500, $e->getMessage());
         }
     }
 
@@ -84,17 +66,9 @@ class ModuleManagementController extends Controller
     {
         try {
             $module = $this->moduleManagementService->updateModule($module, $request->validated(), $request->file('thumbnail'));
-            return response()->json([
-                'success' => true,
-                'message' => 'Module updated successfully',
-                'data' => $module
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update module',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->success(new ModuleResource($module), 'Module updated successfully');
+        } catch (Exception $e) {
+            return $this->error('Failed to update module', 500, $e->getMessage());
         }
     }
 
@@ -105,17 +79,9 @@ class ModuleManagementController extends Controller
     {
         try {
             $this->moduleManagementService->deleteModule($module);
-            return response()->json([
-                'success' => true,
-                'message' => 'Modul berhasil dihapus',
-                'data' => null
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus modul',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->success(null, 'Modul berhasil dihapus');
+        } catch (Exception $e) {
+            return $this->error('Gagal menghapus modul', 500, $e->getMessage());
         }
     }
 
@@ -126,17 +92,9 @@ class ModuleManagementController extends Controller
     {
         try {
             $this->moduleManagementService->reorderModules($request->validated()['modules']);
-            return response()->json([
-                'success' => true,
-                'message' => 'Urutan modul berhasil diperbarui',
-                'data' => null
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memperbarui urutan modul',
-                'error' => $e->getMessage()
-            ], 500);
+            return $this->success(null, 'Urutan modul berhasil diperbarui');
+        } catch (Exception $e) {
+            return $this->error('Gagal memperbarui urutan modul', 500, $e->getMessage());
         }
     }
 }

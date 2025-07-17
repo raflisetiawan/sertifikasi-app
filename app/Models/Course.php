@@ -47,4 +47,9 @@ class Course extends Model
     {
         return $this->hasOne(Forum::class);
     }
+
+    public function enrollments()
+    {
+        return $this->hasMany(Enrollment::class);
+    }
 }

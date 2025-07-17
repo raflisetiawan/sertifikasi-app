@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AssignmentManagementController;
 use App\Http\Controllers\Admin\CourseBenefitController;
 use App\Http\Controllers\Admin\FileManagementController;
@@ -21,6 +22,11 @@ use App\Http\Controllers\Admin\AdminCourseTrainerController;
 use App\Http\Controllers\TrainerController;
 use App\Http\Controllers\ZoomLinkController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+
+Route::post('/courses/bulk-update-status', [CourseController::class, 'bulkUpdateStatus']);
+Route::post('/courses/bulk-delete', [CourseController::class, 'bulkDelete']);
 
 Route::get('/courses', [CourseController::class, 'getCourseTableWithZoomLink']);
 Route::post('/course', [CourseController::class, 'store']);
@@ -56,7 +62,7 @@ Route::get('courses/{courseId}/modules', [ModuleManagementController::class, 'in
 Route::post('modules', [ModuleManagementController::class, 'store']);
 Route::get('modules/{id}', [ModuleManagementController::class, 'show']);
 Route::put('modules/{id}', [ModuleManagementController::class, 'update']);
-Route::delete('modules/{id}', [ModuleManagementController::class, 'destroy']);
+Route::delete('modules/{module}', [ModuleManagementController::class, 'destroy']);
 Route::post('modules/reorder', [ModuleManagementController::class, 'reorder']);
 
 Route::get('modules/{moduleId}/concepts', [ModuleConceptManagementController::class, 'index']);
@@ -75,68 +81,69 @@ Route::post('module-exercises/reorder', [ModuleExerciseManagementController::cla
 
 Route::resource('course_benefits', CourseBenefitController::class);
 
-Route::group(['prefix' => 'admin'], function () {
-    Route::get('modules/{module}/contents', [ModuleContentManagementController::class, 'index']);
-    Route::post('modules/{module}/contents', [ModuleContentManagementController::class, 'store']);
-    Route::get('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'show']);
-    Route::put('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'update']);
-    Route::delete('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'destroy']);
-    Route::post('modules/{module}/contents/reorder', [ModuleContentManagementController::class, 'reorder']);
+Route::get('modules/{module}/contents', [ModuleContentManagementController::class, 'index']);
+Route::post('modules/{module}/contents', [ModuleContentManagementController::class, 'store']);
+Route::get('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'show']);
+Route::put('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'update']);
+Route::delete('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'destroy']);
+Route::post('modules/{module}/contents/reorder', [ModuleContentManagementController::class, 'reorder']);
 
-    Route::group(['prefix' => 'texts'], function () {
-        Route::get('/', [TextManagementController::class, 'index']);
-        Route::post('/', [TextManagementController::class, 'store']);
-        Route::get('/{id}', [TextManagementController::class, 'show']);
-        Route::put('/{id}', [TextManagementController::class, 'update']);
-        Route::delete('/{id}', [TextManagementController::class, 'destroy']);
-    });
+Route::get('courses/{courseId}/modules', [ModuleManagementController::class, 'index']);
 
-
-    Route::group(['prefix' => 'quizzes'], function () {
-        Route::get('/', [QuizManagementController::class, 'index']);
-        Route::post('/', [QuizManagementController::class, 'store']);
-        Route::get('/{id}', [QuizManagementController::class, 'show']);
-        Route::put('/{id}', [QuizManagementController::class, 'update']);
-        Route::delete('/{id}', [QuizManagementController::class, 'destroy']);
-    });
-
-    Route::group(['prefix' => 'assignments'], function () {
-        Route::get('/', [AssignmentManagementController::class, 'index']);
-        Route::post('/', [AssignmentManagementController::class, 'store']);
-        Route::get('/{id}', [AssignmentManagementController::class, 'show']);
-        Route::put('/{id}', [AssignmentManagementController::class, 'update']);
-        Route::delete('/{id}', [AssignmentManagementController::class, 'destroy']);
-    });
-
-    Route::group(['prefix' => 'videos'], function () {
-        Route::get('/', [VideoManagementController::class, 'index']);
-        Route::post('/', [VideoManagementController::class, 'store']);
-        Route::get('/{id}', [VideoManagementController::class, 'show']);
-        Route::put('/{video}', [VideoManagementController::class, 'update']);
-        Route::delete('/{id}', [VideoManagementController::class, 'destroy']);
-    });
-
-    Route::group(['prefix' => 'practices'], function () {
-        Route::get('/', [PracticeManagementController::class, 'index']);
-        Route::post('/', [PracticeManagementController::class, 'store']);
-        Route::get('/{id}', [PracticeManagementController::class, 'show']);
-        Route::put('/{id}', [PracticeManagementController::class, 'update']);
-        Route::delete('/{id}', [PracticeManagementController::class, 'destroy']);
-    });
-
-    Route::group(['prefix' => 'files'], function () {
-        Route::get('/', [FileManagementController::class, 'index']);
-        Route::post('/', [FileManagementController::class, 'store']);
-        Route::get('/{id}', [FileManagementController::class, 'show']);
-        Route::post('/{id}', [FileManagementController::class, 'update']);
-        Route::delete('/{id}', [FileManagementController::class, 'destroy']);
-        Route::get('/{id}/download', [FileManagementController::class, 'download']);
-    });
-
-    Route::get('enrollments', [EnrollmentReviewController::class, 'index']);
-    Route::put('enrollments/{enrollment}/review', [EnrollmentReviewController::class, 'review']);
-    Route::post('enrollments/{enrollment}/generate-certificate', [EnrollmentReviewController::class, 'generateCertificate']);
-
-    // Forum management for specific courses
-    Route::apiResource('courses.forums', ForumController::class)->shallow();
+Route::group(['prefix' => 'texts'], function () {
+    Route::get('/', [TextManagementController::class, 'index']);
+    Route::post('/', [TextManagementController::class, 'store']);
+    Route::get('/{id}', [TextManagementController::class, 'show']);
+    Route::put('/{id}', [TextManagementController::class, 'update']);
+    Route::delete('/{id}', [TextManagementController::class, 'destroy']);
 });
+
+
+Route::group(['prefix' => 'quizzes'], function () {
+    Route::get('/', [QuizManagementController::class, 'index']);
+    Route::post('/', [QuizManagementController::class, 'store']);
+    Route::get('/{id}', [QuizManagementController::class, 'show']);
+    Route::put('/{id}', [QuizManagementController::class, 'update']);
+    Route::delete('/{id}', [QuizManagementController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'assignments'], function () {
+    Route::get('/', [AssignmentManagementController::class, 'index']);
+    Route::post('/', [AssignmentManagementController::class, 'store']);
+    Route::get('/{id}', [AssignmentManagementController::class, 'show']);
+    Route::put('/{id}', [AssignmentManagementController::class, 'update']);
+    Route::delete('/{id}', [AssignmentManagementController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'videos'], function () {
+    Route::get('/', [VideoManagementController::class, 'index']);
+    Route::post('/', [VideoManagementController::class, 'store']);
+    Route::get('/{id}', [VideoManagementController::class, 'show']);
+    Route::put('/{video}', [VideoManagementController::class, 'update']);
+    Route::delete('/{id}', [VideoManagementController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'practices'], function () {
+    Route::get('/', [PracticeManagementController::class, 'index']);
+    Route::post('/', [PracticeManagementController::class, 'store']);
+    Route::get('/{id}', [PracticeManagementController::class, 'show']);
+    Route::put('/{id}', [PracticeManagementController::class, 'update']);
+    Route::delete('/{id}', [PracticeManagementController::class, 'destroy']);
+});
+
+Route::group(['prefix' => 'files'], function () {
+    Route::get('/', [FileManagementController::class, 'index']);
+    Route::post('/', [FileManagementController::class, 'store']);
+    Route::get('/{id}', [FileManagementController::class, 'show']);
+    Route::post('/{id}', [FileManagementController::class, 'update']);
+    Route::delete('/{id}', [FileManagementController::class, 'destroy']);
+    Route::get('/{id}/download', [FileManagementController::class, 'download']);
+});
+
+Route::get('enrollments', [EnrollmentReviewController::class, 'index']);
+Route::get('enrollments/{enrollment}', [EnrollmentReviewController::class, 'showEnrollmentDetails']);
+Route::put('enrollments/{enrollment}/review', [EnrollmentReviewController::class, 'review']);
+Route::post('enrollments/{enrollment}/generate-certificate', [EnrollmentReviewController::class, 'generateCertificate']);
+
+// Forum management for specific courses
+Route::apiResource('courses.forums', ForumController::class)->shallow();

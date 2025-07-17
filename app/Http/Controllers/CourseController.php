@@ -6,11 +6,18 @@ use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
+use App\Services\CourseService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class CourseController extends Controller
 {
+    protected $courseService;
+
+    public function __construct(CourseService $courseService)
+    {
+        $this->courseService = $courseService;
+    }
+
     public function index()
     {
         $courses = Course::orderBy('created_at', 'desc')->get();
@@ -19,88 +26,31 @@ class CourseController extends Controller
 
     public function store(StoreCourseRequest $request)
     {
-        $validated = $request->validated();
-
-        $imageHash = $this->uploadFile($request, 'image', 'public/courses');
-        $guidelinesHash = $this->uploadFile($request, 'guidelines', 'public/courses/guideline');
-        $syllabusHash = $this->uploadFile($request, 'syllabus', 'public/courses/syllabus');
-
-        $course = Course::create(array_merge($validated, [
-            'image' => $imageHash,
-            'guidelines' => $guidelinesHash,
-            'syllabus_path' => $syllabusHash,
-            'status' => 'not_started',
-        ]));
-
-        if ($request->has('trainer_ids')) {
-            $course->trainers()->sync($request->input('trainer_ids'));
-        }
-
+        $course = $this->courseService->createCourse($request->validated());
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
     }
 
-    public function show(string $id)
+    public function show(Course $course)
     {
-        $course = Course::with('trainers')->find($id);
-
-        if (!$course) {
-            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
-        }
-
+        $course->load('trainers');
         return new CourseResource(true, 'Detail Data course!', $course);
     }
 
-    public function update(UpdateCourseRequest $request, string $id)
+    public function update(UpdateCourseRequest $request, Course $course)
     {
-        $course = Course::findOrFail($id);
-        $validated = $request->validated();
-
-        if ($request->hasFile('image')) {
-            $this->deleteFile('public/courses/' . $course->image);
-            $validated['image'] = $this->uploadFile($request, 'image', 'public/courses');
-        }
-
-        if ($request->hasFile('guidelines')) {
-            $this->deleteFile('public/courses/guideline/' . $course->guidelines);
-            $validated['guidelines'] = $this->uploadFile($request, 'guidelines', 'public/courses/guideline');
-        }
-
-        if ($request->hasFile('syllabus')) {
-            $this->deleteFile('public/courses/syllabus/' . $course->syllabus_path);
-            $validated['syllabus_path'] = $this->uploadFile($request, 'syllabus', 'public/courses/syllabus');
-        }
-
-        $course->update($validated);
-
-        if ($request->has('trainer_ids')) {
-            $course->trainers()->sync($request->input('trainer_ids'));
-        }
-
-        return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $course);
+        $updatedCourse = $this->courseService->updateCourse($course, $request->validated());
+        return new CourseResource(true, 'Data Course Berhasil Diperbarui!', $updatedCourse);
     }
 
-    public function destroy($id)
+    public function destroy(Course $course)
     {
-        $course = Course::findOrFail($id);
-
-        $this->deleteFile('public/courses/' . $course->image);
-        $this->deleteFile('public/courses/guideline/' . $course->guidelines);
-        $this->deleteFile('public/courses/syllabus/' . $course->syllabus_path);
-
-        $course->trainers()->detach();
-        $course->delete();
-
+        $this->courseService->deleteCourse($course);
         return new CourseResource(true, 'Data Course Berhasil Dihapus!', null);
     }
 
-    public function relatedCourse(string $id)
+    public function relatedCourse(Course $course)
     {
-        $course = Course::with('trainers')->find($id);
-
-        if (!$course) {
-            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
-        }
-
+        $course->load('trainers');
         $relatedCourses = Course::where('id', '<>', $course->id)
             ->whereHas('trainers', function ($query) use ($course) {
                 $query->whereIn('trainers.id', $course->trainers->pluck('id'));
@@ -109,55 +59,81 @@ class CourseController extends Controller
             ->get();
 
         if ($relatedCourses->isEmpty()) {
-            $randomCourses = Course::inRandomOrder()->limit(4)->get();
+            $randomCourses = Course::where('id', '<>', $course->id)->inRandomOrder()->limit(4)->get();
             return new CourseResource(true, 'Random Courses', $randomCourses);
         }
 
         return new CourseResource(true, 'Related Courses', $relatedCourses);
     }
 
-    public function getCourseNameById(string $id)
+    public function getCourseNameById(Course $course)
     {
-        $course = Course::find($id);
-
-        if (!$course) {
-            return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
-        }
-
         return response()->json(['course_name' => $course->name], 200);
     }
 
-    public function getCourseTableWithZoomLink()
+    public function getCourseTableWithZoomLink(Request $request)
     {
-        $course = Course::select(
-            'name',
-            'operational_start',
-            'operational_end',
-            'id',
-            'status',
-        )->latest()->get();
+        $query = Course::select('name', 'operational_start', 'operational_end', 'id', 'status')->latest();
 
-        if (!$course) {
+        if ($request->has('status') && in_array($request->status, ['not_started', 'ongoing', 'completed'])) {
+            $query->where('status', $request->status);
+        }
+        if ($request->has('start_date')) {
+            $query->whereDate('operational_start', '>=', $request->start_date);
+        }
+        if ($request->has('end_date')) {
+            $query->whereDate('operational_start', '<=', $request->end_date);
+        }
+
+        $courses = $query->get();
+
+        if ($courses->isEmpty()) {
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
         }
 
-        return response()->json(['data' => $course], 200);
+        return response()->json(['data' => $courses], 200);
+    }
+
+    public function bulkUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:courses,id',
+            'status' => 'required|in:not_started,ongoing,completed',
+        ]);
+
+        Course::whereIn('id', $request->ids)->update(['status' => $request->status]);
+
+        return response()->json(['message' => 'Status kursus berhasil diperbarui.'], 200);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:courses,id',
+        ]);
+
+        $courses = Course::whereIn('id', $request->ids)->get();
+
+        foreach ($courses as $course) {
+            $this->courseService->deleteCourse($course);
+        }
+
+        return response()->json(['message' => 'Kursus berhasil dihapus.'], 200);
     }
 
     public function getIdAndNameCourse()
     {
         $courses = Course::select('id', 'name')->get();
+        if ($courses->isEmpty()) {
+            return response()->json(['message' => 'Tidak ada kursus yang ditemukan'], 404);
+        }
         return response()->json(['data' => $courses], 200);
     }
 
-    public function editCourseStatus(Request $request, $id)
+    public function editCourseStatus(Request $request, Course $course)
     {
-        $course = Course::find($id);
-
-        if (!$course) {
-            return redirect()->route('courses.index')->with('error', 'Course not found');
-        }
-
         $request->validate([
             'status' => 'required|in:not_started,ongoing,completed'
         ]);
@@ -168,23 +144,16 @@ class CourseController extends Controller
         return response()->json(['data' => $course], 200);
     }
 
-    public function getCourseWithModules(string $id)
+    public function getCourseWithModules(Course $course)
     {
-        $course = Course::with(['modules' => function ($query) {
+        $course->load(['modules' => function ($query) {
             $query->orderBy('order')
                 ->with(['concepts' => function ($q) {
                     $q->orderBy('order');
                 }, 'exercises' => function ($q) {
                     $q->orderBy('order');
                 }]);
-        }])->find($id);
-
-        if (!$course) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data Course tidak ditemukan'
-            ], 404);
-        }
+        }]);
 
         $transformedData = [
             'id' => $course->id,
@@ -224,23 +193,5 @@ class CourseController extends Controller
             'message' => 'Detail Course dengan Modul berhasil dimuat',
             'data' => $transformedData
         ]);
-    }
-
-    private function uploadFile(Request $request, string $fieldName, string $directory): ?string
-    {
-        if ($request->hasFile($fieldName)) {
-            $file = $request->file($fieldName);
-            $hash = $file->hashName();
-            $file->storeAs($directory, $hash);
-            return $hash;
-        }
-        return null;
-    }
-
-    private function deleteFile(string $path): void
-    {
-        if (Storage::exists($path)) {
-            Storage::delete($path);
-        }
     }
 }

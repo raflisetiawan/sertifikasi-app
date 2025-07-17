@@ -22,7 +22,7 @@ class EnrollmentReviewRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'final_score' => 'nullable|numeric|min:0|max:100',
+            'final_score' => ['required', 'numeric', 'min:0', 'max:100'],
         ];
     }
 }

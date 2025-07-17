@@ -12,9 +12,25 @@ class FaqController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        $faqs = Faq::all();
+        $query = Faq::query();
+
+        // Search functionality
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('question', 'like', '%' . $search . '%')
+                  ->orWhere('answer', 'like', '%' . $search . '%');
+            });
+        }
+
+        // Category filter
+        if ($request->has('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        $faqs = $query->get();
         return response()->json($faqs);
     }
 
@@ -29,6 +45,7 @@ class FaqController extends Controller
         $request->validate([
             'question' => 'required|string',
             'answer' => 'required|string',
+            'category' => 'nullable|string',
         ]);
 
         $faq = Faq::create($request->all());
@@ -59,6 +76,7 @@ class FaqController extends Controller
         $request->validate([
             'question' => 'required|string',
             'answer' => 'required|string',
+            'category' => 'nullable|string',
         ]);
 
         $faq->update($request->all());

@@ -27,17 +27,38 @@ class EnrollmentReviewController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Enrollment::with(['user', 'course'])
-            ->whereIn('status', ['completed', 'pending_admin_review']);
+        $query = Enrollment::with(['user', 'course']);
 
-        // Optional: Filter by course_id
+        // Filter by status
+        if ($request->has('status') && $request->input('status') !== 'all') {
+            $query->where('status', $request->input('status'));
+        } else {
+            // Default filter if no status is specified
+            $query->whereIn('status', ['completed', 'pending_admin_review']);
+        }
+
+        // Filter by course_id
         if ($request->has('course_id')) {
             $query->where('course_id', $request->input('course_id'));
         }
 
-        // Optional: Filter by user_id
+        // Filter by user_id
         if ($request->has('user_id')) {
             $query->where('user_id', $request->input('user_id'));
+        }
+
+        // Filter by course name
+        if ($request->has('course_name')) {
+            $query->whereHas('course', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->input('course_name') . '%');
+            });
+        }
+
+        // Filter by user name
+        if ($request->has('user_name')) {
+            $query->whereHas('user', function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->input('user_name') . '%');
+            });
         }
 
         $enrollments = $query->latest('updated_at')->paginate(10);
@@ -111,5 +132,27 @@ class EnrollmentReviewController extends Controller
                 'message' => 'Failed to generate certificate.'
             ], 500);
         }
+    }
+
+    /**
+     * Display detailed information for a single enrollment, including progress.
+     *
+     * @param Enrollment $enrollment
+     * @return JsonResponse
+     */
+    public function showEnrollmentDetails(Enrollment $enrollment): JsonResponse
+    {
+        $enrollment->load([
+            'user',
+            'course',
+            'moduleProgresses.module',
+            'contentProgresses.moduleContent'
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enrollment details loaded successfully.',
+            'data' => $enrollment
+        ]);
     }
 }

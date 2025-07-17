@@ -24,6 +24,7 @@ class FaqFactory extends Factory
         return [
             'question' => $this->faker->sentence . '?',
             'answer' => $this->faker->paragraph,
+            'category' => $this->faker->randomElement(['Akun', 'Pembayaran', 'Kursus', 'Teknis', 'Lain-lain']),
         ];
     }
 }

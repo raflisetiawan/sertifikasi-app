@@ -30,6 +30,9 @@ use App\Http\Controllers\ZoomLinkController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
+require __DIR__ . '/api/course.php';
+require __DIR__ . '/api/trainer.php';
+
 // Public routes
 Route::post('/signup', [AuthController::class, 'sign_up']);
 Route::post('/signin', [AuthController::class, 'sign_in']);
@@ -66,9 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::get('/courses/with-zoom-link', [CourseController::class, 'getCourseTableWithZoomLink']);
-    Route::get('/courses/name-and-id', [CourseController::class, 'getIdAndNameCourse']);
-
-
+    Route::get('/courses/get/name-and-id', [CourseController::class, 'getIdAndNameCourse']);
     Route::get('/user-profile/{id}', [UserProfileController::class, 'show']);
     Route::patch('/user-profile/{id}', [UserProfileController::class, 'update']);
     Route::delete('/user-profile/{id}/remove-image', [UserProfileController::class, 'removeImage']);
@@ -150,9 +151,9 @@ Route::post('payments/status/update', [PaymentController::class, 'updatePaymentS
 Route::apiResource('contacts', ContactController::class)->except(['destroy']);
 Route::get('/course', [CourseController::class, 'index']);
 Route::get('courses/name/{id}', [CourseController::class, 'getCourseNameById']);
-Route::get('/course/{id}', [CourseController::class, 'show']);
-Route::get('courses/{id}/related', [CourseController::class, 'relatedCourse']);
-Route::get('/course/{id}/with-modules', [CourseController::class, 'getCourseWithModules']);
+Route::get('/course/{course}', [CourseController::class, 'show']);
+Route::get('courses/{course}/related', [CourseController::class, 'relatedCourse']);
+Route::get('/course/{course}/with-modules', [CourseController::class, 'getCourseWithModules']);
 
 Route::get('/faqs', [FaqController::class, 'index']);
 Route::get('/faqs/{faq}', [FaqController::class, 'show']);
