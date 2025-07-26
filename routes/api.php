@@ -29,15 +29,16 @@ use App\Http\Controllers\VerifyEmailController;
 use App\Http\Controllers\ZoomLinkController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\Http\Controllers\CsrfCookieController;
 
 require __DIR__ . '/api/course.php';
 require __DIR__ . '/api/trainer.php';
 
 // Public routes
+Route::get('/sanctum/csrf-cookie', [CsrfCookieController::class, 'show']);
 Route::post('/signup', [AuthController::class, 'sign_up']);
 Route::post('/signin', [AuthController::class, 'sign_in']);
 Route::post('/signout', [AuthController::class, 'sign_out']);
-Route::post('/auth/refresh', [AuthController::class, 'refreshToken']);
 
 Route::get('auth/google', [AuthController::class, 'googleRedirect']);
 Route::get('auth/google/callback', [AuthController::class, 'googleCallback']);
@@ -62,6 +63,7 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])
 
 // Routes that require authentication
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::post('/auth/refresh', [AuthController::class, 'refreshToken']);
     Route::get('/user', [AuthController::class, 'getUserWithRole']);
 
     Route::post('/registration', [RegistrationController::class, 'store']);
@@ -154,6 +156,17 @@ Route::get('courses/name/{id}', [CourseController::class, 'getCourseNameById']);
 Route::get('/course/{course}', [CourseController::class, 'show']);
 Route::get('courses/{course}/related', [CourseController::class, 'relatedCourse']);
 Route::get('/course/{course}/with-modules', [CourseController::class, 'getCourseWithModules']);
+
+// Help Center (Pusat Bantuan) endpoints
+Route::get('/help-center', [FaqController::class, 'index']);
+Route::middleware(['auth:sanctum'])->post('/help-center/questions', [FaqController::class, 'submitQuestion']);
+Route::middleware(['auth:sanctum'])->get('/help-center/my-questions', [FaqController::class, 'myQuestions']);
+// Admin endpoints for help center
+Route::middleware(['auth:sanctum', App\Http\Middleware\AdminMiddleware::class])->group(function () {
+    Route::get('/help-center/questions', [FaqController::class, 'allQuestions']);
+    Route::post('/help-center/questions/{id}/answer', [FaqController::class, 'answerQuestion']);
+});
+Route::get('/help-center/{faq}', [FaqController::class, 'show']);
 
 Route::get('/faqs', [FaqController::class, 'index']);
 Route::get('/faqs/{faq}', [FaqController::class, 'show']);

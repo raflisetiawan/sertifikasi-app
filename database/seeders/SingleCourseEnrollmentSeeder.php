@@ -44,11 +44,9 @@ class SingleCourseEnrollmentSeeder extends Seeder
                 'price' => 500,
                 'place' => 'Online',
                 'duration' => '1 week',
-                'status' => 'active',
+                'status' => 'published',
                 'operational_start' => now(),
-                'operational_end' => now()->addWeek(),
-                'benefit' => 'Understand the admin review flow.',
-                'guidelines' => 'No prerequisites.'
+                'operational_end' =>    now()->addWeek(),
             ]
         );
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CourseStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Course;
@@ -16,7 +17,7 @@ class AdminDashboardController extends Controller
     {
         // Card Statistics
         $totalUsers = User::count();
-        $totalActiveCourses = Course::where('status', 'active')->count();
+        $totalActiveCourses = Course::where('status', CourseStatus::PUBLISHED)->count();
         $newRegistrationsLastMonth = Registration::where('created_at', '>=', Carbon::now()->subMonth())->count();
         $totalRevenue = Payment::where('transaction_status', 'completed')->sum('gross_amount'); // Assuming 'completed' status and 'gross_amount' column
 

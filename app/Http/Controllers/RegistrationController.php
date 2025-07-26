@@ -88,6 +88,8 @@ class RegistrationController extends Controller
 
         $userId = auth()->id();
         $courseId = $request->course_id;
+        $user = auth()->user();
+        $course = Course::findOrFail($courseId);
 
         // Check for existing registration
         $existingRegistration = Registration::where('user_id', $userId)
@@ -104,14 +106,47 @@ class RegistrationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Create registration for authenticated user
+            // IF COURSE IS FREE
+            if ($course->price <= 0) {
+                $registration = Registration::create([
+                    'user_id' => $userId,
+                    'course_id' => $courseId,
+                    'status' => 'completed', // Langsung complete karena gratis
+                    'verification' => true,
+                    'verified_at' => now(),
+                    'payment_status' => 'paid' // Anggap sudah lunas
+                ]);
+
+                $enrollment = Enrollment::create([
+                    'user_id' => $registration->user_id,
+                    'course_id' => $registration->course_id,
+                    'registration_id' => $registration->id,
+                    'status' => 'active',
+                    'started_at' => now(),
+                    'progress_percentage' => 0.0
+                ]);
+
+                $this->initializeModuleProgress($enrollment);
+                $this->logEnrollmentCreation($enrollment);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pendaftaran berhasil, Anda langsung terdaftar di kelas gratis ini.',
+                    'data' => [
+                        'registration' => $registration->load('course'),
+                        'enrollment' => $enrollment->load('course')
+                    ]
+                ], 201);
+            }
+
+            // IF COURSE IS PAID (existing logic)
             $registration = Registration::create([
                 'user_id' => $userId,
                 'course_id' => $courseId,
                 'status' => 'pending'
             ]);
-
-            $user = auth()->user();
 
             // Send email notification to admin
             $adminEmail = config('mail.from.address');

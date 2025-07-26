@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\CourseStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,9 +21,6 @@ class Course extends Model
         'image',
         'operational_start',
         'operational_end',
-        'status',
-        'benefit',
-        'guidelines',
         'syllabus_path'
     ];
 
@@ -31,6 +29,7 @@ class Course extends Model
         'operational_end' => 'datetime',
         'key_concepts' => 'array',
         'facility' => 'array',
+        'status' => CourseStatus::class,
     ];
 
     public function trainers()
@@ -51,5 +50,25 @@ class Course extends Model
     public function enrollments()
     {
         return $this->hasMany(Enrollment::class);
+    }
+
+    public function liveSessions()
+    {
+        return $this->hasMany(LiveSession::class);
+    }
+
+    public function courseBenefits()
+    {
+        return $this->hasMany(CourseBenefit::class);
+    }
+
+    protected static function booted()
+    {
+        static::created(function ($course) {
+            $course->forum()->create([
+                'title' => 'Forum Diskusi: ' . $course->name,
+                'description' => 'Selamat datang di forum diskusi untuk kursus ' . $course->name . '. Silakan mulai topik baru untuk berdiskusi.',
+            ]);
+        });
     }
 }

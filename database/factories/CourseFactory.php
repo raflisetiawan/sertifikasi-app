@@ -30,11 +30,9 @@ class CourseFactory extends Factory
             'price' => $this->faker->numberBetween(500000, 2000000),
             'place' => 'Online',
             'duration' => $this->faker->numberBetween(4, 12) . ' weeks',
-            'status' => 'active',
+            'status' => 'published',
             'operational_start' => now(),
             'operational_end' => now()->addMonths(6),
-            'benefit' => $this->faker->sentence,
-            'guidelines' => $this->faker->sentence,
         ];
     }
 }

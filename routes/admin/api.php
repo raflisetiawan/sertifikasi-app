@@ -29,9 +29,11 @@ Route::post('/courses/bulk-update-status', [CourseController::class, 'bulkUpdate
 Route::post('/courses/bulk-delete', [CourseController::class, 'bulkDelete']);
 
 Route::get('/courses', [CourseController::class, 'getCourseTableWithZoomLink']);
+Route::get('/course/admin/{course}', [CourseController::class, 'showForAdmin']);
 Route::post('/course', [CourseController::class, 'store']);
 Route::delete('/course/{id}', [CourseController::class, 'destroy']);
-Route::post('/course/{id}', [CourseController::class, 'update']);
+Route::put('/course/{course}', [CourseController::class, 'update']);
+Route::post('/course/{course}/publish', [CourseController::class, 'publish']);
 Route::patch('/course/updateStatus/{id}', [CourseController::class, 'editCourseStatus']);
 Route::post('/course/{id}/upload-certificate', [CourseController::class, 'uploadCertificateTemplate']);
 
@@ -84,6 +86,7 @@ Route::resource('course_benefits', CourseBenefitController::class);
 Route::get('modules/{module}/contents', [ModuleContentManagementController::class, 'index']);
 Route::post('modules/{module}/contents', [ModuleContentManagementController::class, 'store']);
 Route::get('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'show']);
+Route::put('modules/{module}/contents/update-order', [ModuleContentManagementController::class, 'updateOrder']);
 Route::put('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'update']);
 Route::delete('modules/{module}/contents/{content}', [ModuleContentManagementController::class, 'destroy']);
 Route::post('modules/{module}/contents/reorder', [ModuleContentManagementController::class, 'reorder']);
@@ -147,3 +150,6 @@ Route::post('enrollments/{enrollment}/generate-certificate', [EnrollmentReviewCo
 
 // Forum management for specific courses
 Route::apiResource('courses.forums', ForumController::class)->shallow();
+
+Route::get('/help-center/questions', [FaqController::class, 'allQuestions']);
+Route::post('/help-center/questions/{id}/answer', [FaqController::class, 'answerQuestion']);

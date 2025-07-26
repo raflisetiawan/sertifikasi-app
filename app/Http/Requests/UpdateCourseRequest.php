@@ -21,7 +21,7 @@ class UpdateCourseRequest extends FormRequest
      */
     public function rules(): array
     {
-        $courseId = $this->route('id');
+        $courseId = $this->route('course')->id;
 
         return [
             'name' => 'sometimes|required|string|max:255|unique:courses,name,' . $courseId,
@@ -46,9 +46,6 @@ class UpdateCourseRequest extends FormRequest
                 'date',
                 'after:operational_start'
             ],
-            'benefit' => 'sometimes|required|string|min:12',
-            'guidelines' => 'nullable|file|mimes:pdf|max:10240',
-            
             'syllabus' => 'nullable|file|mimes:pdf|max:10240',
             'status' => 'sometimes|required|in:not_started,ongoing,completed'
         ];
@@ -74,10 +71,7 @@ class UpdateCourseRequest extends FormRequest
             'image.max' => 'Ukuran gambar maksimal 2MB',
             'operational_start.after_or_equal' => 'Tanggal mulai tidak boleh kurang dari hari ini',
             'operational_end.after' => 'Tanggal selesai harus setelah tanggal mulai',
-            'benefit.min' => 'Benefit minimal 50 karakter',
-            'guidelines.mimes' => 'Format pedoman harus PDF',
-            'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
-            
+
             'syllabus.mimes' => 'Format silabus harus PDF',
             'syllabus.max' => 'Ukuran silabus maksimal 10MB',
             'status.in' => 'Status tidak valid'

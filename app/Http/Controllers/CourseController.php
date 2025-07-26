@@ -2,25 +2,31 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\CourseStatus;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
 use App\Http\Resources\CourseResource;
 use App\Models\Course;
+use App\Services\CoursePublicationService;
 use App\Services\CourseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
     protected $courseService;
+    protected $publicationService;
 
-    public function __construct(CourseService $courseService)
+    public function __construct(CourseService $courseService, CoursePublicationService $publicationService)
     {
         $this->courseService = $courseService;
+        $this->publicationService = $publicationService;
     }
 
     public function index()
     {
-        $courses = Course::orderBy('created_at', 'desc')->get();
+        $courses = Course::where('status', CourseStatus::PUBLISHED)->orderBy('created_at', 'desc')->get();
         return new CourseResource(true, 'List Data Courses', $courses);
     }
 
@@ -34,6 +40,26 @@ class CourseController extends Controller
     {
         $course->load('trainers');
         return new CourseResource(true, 'Detail Data course!', $course);
+    }
+
+    public function showForAdmin(Course $course)
+    {
+        // Tambahkan data kesiapan publikasi untuk admin
+        if ($course->status === CourseStatus::PUBLISHED) {
+            $course->publication_readiness = [
+                'is_ready' => true,
+                'errors' => [],
+            ];
+        } else {
+            $readiness = $this->publicationService->checkPublicationRequirements($course);
+            $course->publication_readiness = [
+                'is_ready' => $readiness['can_publish'],
+                'errors' => $readiness['errors'],
+            ];
+        }
+
+        $course->load('trainers', 'liveSessions');
+        return new CourseResource(true, 'Detail Data course for Admin!', $course);
     }
 
     public function update(UpdateCourseRequest $request, Course $course)
@@ -51,7 +77,8 @@ class CourseController extends Controller
     public function relatedCourse(Course $course)
     {
         $course->load('trainers');
-        $relatedCourses = Course::where('id', '<>', $course->id)
+        $relatedCourses = Course::where('status', CourseStatus::PUBLISHED)
+            ->where('id', '<>', $course->id)
             ->whereHas('trainers', function ($query) use ($course) {
                 $query->whereIn('trainers.id', $course->trainers->pluck('id'));
             })
@@ -59,7 +86,11 @@ class CourseController extends Controller
             ->get();
 
         if ($relatedCourses->isEmpty()) {
-            $randomCourses = Course::where('id', '<>', $course->id)->inRandomOrder()->limit(4)->get();
+            $randomCourses = Course::where('status', CourseStatus::PUBLISHED)
+                ->where('id', '<>', $course->id)
+                ->inRandomOrder()
+                ->limit(4)
+                ->get();
             return new CourseResource(true, 'Random Courses', $randomCourses);
         }
 
@@ -75,7 +106,10 @@ class CourseController extends Controller
     {
         $query = Course::select('name', 'operational_start', 'operational_end', 'id', 'status')->latest();
 
-        if ($request->has('status') && in_array($request->status, ['not_started', 'ongoing', 'completed'])) {
+        if ($request->has('status')) {
+            $request->validate([
+                'status' => [Rule::in(array_column(CourseStatus::cases(), 'value'))],
+            ]);
             $query->where('status', $request->status);
         }
         if ($request->has('start_date')) {
@@ -91,6 +125,22 @@ class CourseController extends Controller
             return response()->json(['message' => 'Data Course tidak ditemukan'], 404);
         }
 
+        // Menambahkan data kesiapan publikasi untuk setiap kursus
+        $courses->each(function ($course) {
+            if ($course->status === CourseStatus::PUBLISHED) {
+                $course->publication_readiness = [
+                    'is_ready' => true,
+                    'errors' => [],
+                ];
+            } else {
+                $readiness = $this->publicationService->checkPublicationRequirements($course);
+                $course->publication_readiness = [
+                    'is_ready' => $readiness['can_publish'],
+                    'errors' => $readiness['errors'],
+                ];
+            }
+        });
+
         return response()->json(['data' => $courses], 200);
     }
 
@@ -99,7 +149,7 @@ class CourseController extends Controller
         $request->validate([
             'ids' => 'required|array',
             'ids.*' => 'exists:courses,id',
-            'status' => 'required|in:not_started,ongoing,completed',
+            'status' => ['required', Rule::in(array_column(CourseStatus::cases(), 'value'))],
         ]);
 
         Course::whereIn('id', $request->ids)->update(['status' => $request->status]);
@@ -125,7 +175,7 @@ class CourseController extends Controller
 
     public function getIdAndNameCourse()
     {
-        $courses = Course::select('id', 'name')->get();
+        $courses = Course::where('status', CourseStatus::PUBLISHED)->select('id', 'name')->get();
         if ($courses->isEmpty()) {
             return response()->json(['message' => 'Tidak ada kursus yang ditemukan'], 404);
         }
@@ -135,17 +185,46 @@ class CourseController extends Controller
     public function editCourseStatus(Request $request, Course $course)
     {
         $request->validate([
-            'status' => 'required|in:not_started,ongoing,completed'
+            'status' => ['required', Rule::in(array_column(CourseStatus::cases(), 'value'))]
         ]);
 
-        $course->status = $request->input('status');
+        $newStatus = CourseStatus::from($request->input('status'));
+
+        if ($newStatus === CourseStatus::PUBLISHED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gunakan endpoint /publish untuk mempublikasikan kursus.',
+            ], 422);
+        }
+
+        $course->status = $newStatus;
         $course->save();
 
         return response()->json(['data' => $course], 200);
     }
 
+    public function publish(Course $course)
+    {
+        $result = $this->publicationService->publish($course);
+
+        $responsePayload = [
+            'success' => $result['success'],
+            'message' => $result['message'],
+        ];
+
+        if (isset($result['errors'])) {
+            $responsePayload['errors'] = $result['errors'];
+        }
+
+        return response()->json($responsePayload, $result['status_code']);
+    }
+
     public function getCourseWithModules(Course $course)
     {
+        if ($course->status !== CourseStatus::PUBLISHED) {
+            return response()->json(['message' => 'Course not found or not published'], 404);
+        }
+
         $course->load(['modules' => function ($query) {
             $query->orderBy('order')
                 ->with(['concepts' => function ($q) {

@@ -71,10 +71,15 @@ class Registration extends Model
     }
 
     /**
-     * Check if registration is verified and paid
+     * Check if registration is verified and paid, or verified for free course
      */
     public function isVerifiedAndPaid(): bool
     {
+        // Jika kursus gratis (price 0), cukup verifikasi saja
+        if ($this->course && $this->course->price == 0) {
+            return $this->verification;
+        }
+        // Kursus berbayar: harus verifikasi dan payment settlement
         return $this->verification &&
                $this->payment &&
                $this->payment->transaction_status === 'settlement';

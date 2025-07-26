@@ -9,6 +9,13 @@ use Illuminate\Support\Arr;
 
 class CourseService
 {
+    protected LiveSessionService $liveSessionService;
+
+    public function __construct(LiveSessionService $liveSessionService)
+    {
+        $this->liveSessionService = $liveSessionService;
+    }
+
     /**
      * Handle the creation of a new course with file uploads.
      *
@@ -23,6 +30,13 @@ class CourseService
 
         if (isset($data['trainer_ids'])) {
             $course->trainers()->sync($data['trainer_ids']);
+        }
+
+        if (isset($data['live_sessions']) && is_array($data['live_sessions'])) {
+            foreach ($data['live_sessions'] as $sessionData) {
+                $sessionData['course_id'] = $course->id;
+                $this->liveSessionService->createLiveSession($sessionData);
+            }
         }
 
         return $course;
@@ -43,6 +57,38 @@ class CourseService
 
         if (isset($data['trainer_ids'])) {
             $course->trainers()->sync($data['trainer_ids']);
+        }
+
+        if (isset($data['live_sessions']) && is_array($data['live_sessions'])) {
+            $existingSessionIds = $course->liveSessions->pluck('id')->toArray();
+            $updatedSessionIds = [];
+
+            foreach ($data['live_sessions'] as $sessionData) {
+                if (isset($sessionData['id'])) {
+                    // Update existing live session
+                    $liveSession = $course->liveSessions()->find($sessionData['id']);
+                    if ($liveSession) {
+                        $this->liveSessionService->updateLiveSession($liveSession, $sessionData);
+                        $updatedSessionIds[] = $sessionData['id'];
+                    }
+                } else {
+                    // Create new live session
+                    $sessionData['course_id'] = $course->id;
+                    $newSession = $this->liveSessionService->createLiveSession($sessionData);
+                    $updatedSessionIds[] = $newSession->id;
+                }
+            }
+
+            // Delete live sessions that are no longer in the request
+            $sessionsToDelete = array_diff($existingSessionIds, $updatedSessionIds);
+            foreach ($sessionsToDelete as $sessionId) {
+                $this->liveSessionService->deleteLiveSession($sessionId);
+            }
+        } else {
+            // If live_sessions array is not provided or empty, delete all existing live sessions for this course
+            foreach ($course->liveSessions as $liveSession) {
+                $this->liveSessionService->deleteLiveSession($liveSession->id);
+            }
         }
 
         return $course;

@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreModuleContentRequest;
 use App\Http\Requests\Admin\UpdateModuleContentRequest;
 use App\Http\Requests\Admin\ReorderModuleContentRequest;
 use App\Http\Requests\Admin\ShowModuleContentRequest;
+use App\Http\Requests\Admin\UpdateContentOrderRequest;
 use App\Models\Module;
 use App\Models\ModuleContent;
 use App\Services\ModuleContentManagementService;
@@ -120,6 +121,23 @@ class ModuleContentManagementController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reorder contents',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update the order of multiple contents.
+     */
+    public function updateOrder(UpdateContentOrderRequest $request, Module $module)
+    {
+        try {
+            $this->moduleContentManagementService->reorderModuleContents($module, $request->validated()['contents']);
+            return response()->json(['message' => 'Urutan konten berhasil diperbarui.']);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui urutan konten.',
                 'error' => $e->getMessage()
             ], 500);
         }

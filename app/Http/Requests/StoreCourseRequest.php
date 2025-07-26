@@ -42,9 +42,16 @@ class StoreCourseRequest extends FormRequest
                 'date',
                 'after:operational_start'
             ],
-            'benefit' => 'required|string|min:12',
-            'guidelines' => 'nullable|file|mimes:pdf|max:10240', // 10MB max
-            'syllabus' => 'nullable|file|mimes:pdf|max:10240'
+            'syllabus' => 'nullable|file|mimes:pdf|max:10240',
+            'live_sessions' => 'nullable|array',
+            'live_sessions.*.title' => 'required|string|max:255',
+            'live_sessions.*.description' => 'nullable|string',
+            'live_sessions.*.start_time' => 'required|date',
+            'live_sessions.*.end_time' => 'required|date|after:live_sessions.*.start_time',
+            'live_sessions.*.meeting_link' => 'required|url|max:255',
+            'live_sessions.*.meeting_password' => 'nullable|string|max:255',
+            'trainer_ids' => 'nullable|array',
+            'trainer_ids.*' => 'exists:trainers,id',
         ];
     }
 
@@ -80,9 +87,6 @@ class StoreCourseRequest extends FormRequest
             'operational_end.after' => 'Tanggal selesai harus setelah tanggal mulai',
             'benefit.required' => 'Benefit kelas harus diisi',
             'benefit.min' => 'Benefit minimal 50 karakter',
-            'guidelines.required' => 'Pedoman kelas harus diupload',
-            'guidelines.mimes' => 'Format pedoman harus PDF',
-            'guidelines.max' => 'Ukuran pedoman maksimal 10MB',
 
             'syllabus.required' => 'Silabus harus diupload',
             'syllabus.mimes' => 'Format silabus harus PDF',

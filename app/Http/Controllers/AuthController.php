@@ -193,13 +193,21 @@ class AuthController extends Controller
         }
     }
 
-    public function googleCallback()
+    public function googleCallback(Request $request)
     {
+        Log::debug($request->all());
         try {
+            // Validate code parameter exists
+            if (!$request->has('code')) {
+                throw new \Exception('Authorization code not provided');
+            }
+
+            // Get user details from Google
             $googleUser = Socialite::driver('google')
-                ->stateless()  // Add this
+                ->stateless()
                 ->user();
 
+            // Find or create user
             $user = User::where('email', $googleUser->email)->first();
 
             if (!$user) {
@@ -215,11 +223,12 @@ class AuthController extends Controller
                 event(new AssignUserRole($user));
             }
 
+            // Generate token and redirect
             $token = $user->createToken('ApiToken')->plainTextToken;
 
-            // Return JSON response instead of redirect
             return redirect()->away(env('FRONTEND_CALLBACK_URL') . '?token=' . $token);
         } catch (\Exception $e) {
+            Log::error('Google callback error: ' . $e->getMessage());
             return redirect()->away(
                 env('FRONT_URL') . '/auth/error?message=' . urlencode($e->getMessage())
             );
@@ -227,6 +236,7 @@ class AuthController extends Controller
     }
     public function refreshToken(Request $request)
     {
+        Log::debug($request);
         try {
             $user = $request->user();
 

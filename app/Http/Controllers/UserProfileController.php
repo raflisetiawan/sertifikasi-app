@@ -210,7 +210,10 @@ class UserProfileController extends Controller
             $user->update(['image' => $image->hashName()]);
         }
 
-        return new UserResource(true, 'User Profile Image Updated', $user);
+        return (new UserResource($user))->additional([
+            'success' => true,
+            'message' => 'User Profile Image Updated'
+        ]);
     }
 
 }

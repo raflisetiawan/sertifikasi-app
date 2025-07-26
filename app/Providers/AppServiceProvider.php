@@ -11,6 +11,8 @@ use App\Models\Video;
 use App\Services\EnrollmentService;
 use App\Services\PaymentService;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Services\CourseService;
+use App\Services\LiveSessionService;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +29,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService(
                 $app->make(EnrollmentService::class)
+            );
+        });
+
+        $this->app->singleton(CourseService::class, function ($app) {
+            return new CourseService(
+                $app->make(LiveSessionService::class)
             );
         });
     }
