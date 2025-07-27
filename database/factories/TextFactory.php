@@ -22,8 +22,8 @@ class TextFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->sentence,
-            'content' => $this->faker->paragraph,
+            'title' => $this->faker->sentence(5, true, 'id_ID'),
+            'content' => $this->faker->paragraphs(rand(3, 7), true, 'id_ID'),
             'format' => $this->faker->randomElement(['html', 'markdown']),
         ];
     }

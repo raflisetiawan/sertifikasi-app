@@ -23,11 +23,11 @@ class ModuleContentFactory extends Factory
     {
         return [
             'module_id' => null, // Will be set by seeder
-            'title' => $this->faker->sentence,
-            'content_type' => null, // Will be set by seeder
+            'title' => null, // Will be set by seeder
+            'content_type' => $this->faker->randomElement(['video', 'text', 'file', 'quiz', 'assignment', 'practice']),
             'content_id' => null, // Will be set by seeder
-            'order' => $this->faker->numberBetween(1, 100),
-            'is_required' => $this->faker->boolean,
+            'order' => null, // Will be set by seeder
+            'is_required' => $this->faker->boolean(80), // 80% chance of being required
             'minimum_duration_seconds' => null,
             'completion_rules' => null,
         ];

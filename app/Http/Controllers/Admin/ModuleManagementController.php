@@ -65,6 +65,7 @@ class ModuleManagementController extends Controller
     public function update(UpdateModuleRequest $request, Module $module)
     {
         try {
+            $module = Module::findOrFail($module->id);
             $module = $this->moduleManagementService->updateModule($module, $request->validated(), $request->file('thumbnail'));
             return $this->success(new ModuleResource($module), 'Module updated successfully');
         } catch (Exception $e) {

@@ -35,17 +35,15 @@ class BenefitSeeder extends Seeder
 
         foreach ($courses as $course) {
             // Create 2 benefits for each course
-            for ($i = 0; $i < 2; $i++) {
-                $randomImage = $imageFiles[array_rand($imageFiles)];
-                
-                // Store the file and get the new path (e.g., benefits/unique_filename.jpg)
-                $fullPath = Storage::disk('public')->putFile('benefits', new File($randomImage->getRealPath()));
-                
-                CourseBenefit::factory()->create([
-                    'course_id' => $course->id,
-                    'image' => $fullPath,
-                ]);
-            }
+            $randomImage = $imageFiles[array_rand($imageFiles)];
+
+            // Store the file and get the new path (e.g., benefits/unique_filename.jpg)
+            $fullPath = Storage::disk('public')->putFile('benefits', new File($randomImage->getRealPath()));
+
+            CourseBenefit::factory()->create([
+                'course_id' => $course->id,
+                'image' => $fullPath,
+            ]);
         }
     }
 }

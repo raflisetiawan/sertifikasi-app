@@ -63,7 +63,7 @@ Route::delete('/zoom-link/{id}', [ZoomLinkController::class, 'destroy']);
 Route::get('courses/{courseId}/modules', [ModuleManagementController::class, 'index']);
 Route::post('modules', [ModuleManagementController::class, 'store']);
 Route::get('modules/{id}', [ModuleManagementController::class, 'show']);
-Route::put('modules/{id}', [ModuleManagementController::class, 'update']);
+Route::put('modules/{module}', [ModuleManagementController::class, 'update']);
 Route::delete('modules/{module}', [ModuleManagementController::class, 'destroy']);
 Route::post('modules/reorder', [ModuleManagementController::class, 'reorder']);
 

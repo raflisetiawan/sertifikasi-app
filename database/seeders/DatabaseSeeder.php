@@ -25,11 +25,11 @@ class DatabaseSeeder extends Seeder
             FaqSeeder::class,
             TrainerSeeder::class,
             CourseSeeder::class,
+            BenefitSeeder::class,
             ModuleSeeder::class,
             ModuleContentSeeder::class,
             RegistrationEnrollmentSeeder::class,
             SingleCourseEnrollmentSeeder::class,
-            BenefitSeeder::class,
         ]);
     }
 }

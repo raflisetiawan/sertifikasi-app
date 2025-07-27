@@ -24,11 +24,11 @@ class CourseBenefitFactory extends Factory
     {
         return [
             'course_id' => Course::factory(), // Will be overridden by seeder
-            'title' => $this->faker->sentence(3),
-            'subtitle' => $this->faker->sentence(5),
-            'description' => $this->faker->paragraph,
+            'title' => 'Sertifikat Kelulusan',
+            'subtitle' => 'Bukti kompetensi yang diakui industri.',
+            'description' => 'Setelah berhasil menyelesaikan semua modul, Anda akan menerima sertifikat digital yang dapat diverifikasi.',
             'image' => null, // Will be handled by seeder
-            'earn_by' => $this->faker->randomElement(['completion', 'exam', 'assignment']),
+            'earn_by' => 'completion',
         ];
     }
 }

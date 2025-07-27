@@ -22,12 +22,12 @@ class FileFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->sentence(3),
-            'file_path' => 'files/' . $this->faker->uuid . '.pdf',
-            'file_name' => $this->faker->word . '.pdf',
-            'mime_type' => 'application/pdf',
+            'title' => 'Dokumen: ' . $this->faker->sentence(3, true, 'id_ID'),
+            'file_path' => 'files/' . $this->faker->uuid . '.' . $this->faker->randomElement(['pdf', 'docx', 'xlsx', 'pptx']),
+            'file_name' => $this->faker->word . '.' . $this->faker->randomElement(['pdf', 'docx', 'xlsx', 'pptx']),
+            'mime_type' => $this->faker->randomElement(['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.presentationml.presentation']),
             'file_size' => $this->faker->numberBetween(100, 5000),
-            'description' => $this->faker->paragraph,
+            'description' => $this->faker->paragraph(3, true, 'id_ID'),
         ];
     }
 }

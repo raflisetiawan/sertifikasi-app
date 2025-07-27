@@ -22,31 +22,36 @@ class QuizFactory extends Factory
     public function definition()
     {
         return [
-            'title' => $this->faker->sentence(3) . ' Quiz',
-            'description' => $this->faker->paragraph,
+            'title' => 'Kuis: ' . $this->faker->sentence(3, true, 'id_ID'),
+            'description' => $this->faker->paragraph(3, true, 'id_ID'),
             'time_limit_minutes' => $this->faker->numberBetween(10, 60),
             'passing_score' => $this->faker->numberBetween(60, 80),
             'max_attempts' => $this->faker->numberBetween(1, 5),
             'questions' => [
                 [
-                    'question' => $this->faker->sentence . '?',
+                    'question' => 'Pilihlah jawaban yang paling tepat untuk pertanyaan ini: ' . $this->faker->sentence(5, true, 'id_ID') . '?',
                     'type' => 'multiple_choice',
                     'options' => [
-                        $this->faker->word,
-                        $this->faker->word,
-                        $this->faker->word,
-                        $this->faker->word,
+                        $this->faker->sentence(3, true, 'id_ID'),
+                        $this->faker->sentence(3, true, 'id_ID'),
+                        $this->faker->sentence(3, true, 'id_ID'),
+                        $this->faker->sentence(3, true, 'id_ID'),
                     ],
                     'correct_answer' => $this->faker->numberBetween(0, 3),
                     'score' => 10,
                 ],
                 [
-                    'question' => $this->faker->sentence . '?',
+                    'question' => 'Apakah pernyataan berikut benar atau salah: ' . $this->faker->sentence(5, true, 'id_ID') . '?',
                     'type' => 'true_false',
-                    'options' => ['True', 'False'],
+                    'options' => ['Benar', 'Salah'],
                     'correct_answer' => $this->faker->numberBetween(0, 1),
                     'score' => 10,
                 ],
+                [
+                    'question' => 'Jelaskan secara singkat: ' . $this->faker->sentence(4, true, 'id_ID') . '?',
+                    'type' => 'essay',
+                    'score' => 20,
+                ]
             ],
         ];
     }
