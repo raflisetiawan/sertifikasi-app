@@ -1,0 +1,24 @@
+# Ignore Composer dependencies
+vendor/
+
+# Ignore the storage symlink in public. This is the main cause of the error.
+public/storage
+
+# Ignore environment files, they are managed by docker-compose
+.env
+.env.example
+
+# Ignore log files
+storage/logs
+storage/framework/cache/data/
+storage/framework/sessions/
+storage/framework/views/
+
+# Ignore Git folder
+.git
+.gitignore
+
+# Ignore other development files
+README.md
+.editorconfig
+.phpunit.result.cache
