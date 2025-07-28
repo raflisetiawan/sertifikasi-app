@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Course;
+use App\Models\LiveSession;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Arr;
@@ -81,14 +82,12 @@ class CourseService
 
             // Delete live sessions that are no longer in the request
             $sessionsToDelete = array_diff($existingSessionIds, $updatedSessionIds);
-            foreach ($sessionsToDelete as $sessionId) {
-                $this->liveSessionService->deleteLiveSession($sessionId);
+            if (!empty($sessionsToDelete)) {
+                LiveSession::whereIn('id', $sessionsToDelete)->delete();
             }
         } else {
             // If live_sessions array is not provided or empty, delete all existing live sessions for this course
-            foreach ($course->liveSessions as $liveSession) {
-                $this->liveSessionService->deleteLiveSession($liveSession->id);
-            }
+            $course->liveSessions()->delete();
         }
 
         return $course;

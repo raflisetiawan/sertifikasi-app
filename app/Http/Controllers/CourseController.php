@@ -38,7 +38,7 @@ class CourseController extends Controller
 
     public function show(Course $course)
     {
-        $course->load('trainers');
+        $course->load('trainers', 'liveSessions');
         return new CourseResource(true, 'Detail Data course!', $course);
     }
 

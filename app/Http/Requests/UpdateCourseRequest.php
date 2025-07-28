@@ -47,7 +47,15 @@ class UpdateCourseRequest extends FormRequest
                 'after:operational_start'
             ],
             'syllabus' => 'nullable|file|mimes:pdf|max:10240',
-            'status' => 'sometimes|required|in:not_started,ongoing,completed'
+            'status' => 'sometimes|required|in:not_started,ongoing,completed',
+            'live_sessions' => 'nullable|array',
+            'live_sessions.*.id' => 'nullable|integer|exists:live_sessions,id',
+            'live_sessions.*.title' => 'sometimes|required|string|max:255',
+            'live_sessions.*.description' => 'nullable|string',
+            'live_sessions.*.start_time' => 'sometimes|required|date',
+            'live_sessions.*.end_time' => 'sometimes|required|date|after:live_sessions.*.start_time',
+            'live_sessions.*.meeting_link' => 'sometimes|required|url',
+            'live_sessions.*.meeting_password' => 'nullable|string|max:255',
         ];
     }
 
