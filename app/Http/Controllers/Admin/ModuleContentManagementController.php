@@ -23,9 +23,6 @@ class ModuleContentManagementController extends Controller
         $this->moduleContentManagementService = $moduleContentManagementService;
     }
 
-    /**
-     * Display a listing of module contents
-     */
     public function index(Module $module)
     {
         $contents = $this->moduleContentManagementService->getModuleContents($module);
@@ -35,9 +32,6 @@ class ModuleContentManagementController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created module content
-     */
     public function store(StoreModuleContentRequest $request, Module $module)
     {
         try {
@@ -55,9 +49,6 @@ class ModuleContentManagementController extends Controller
         }
     }
 
-    /**
-     * Display the specified module content
-     */
     public function show(ShowModuleContentRequest $request, Module $module, ModuleContent $content)
     {
         return response()->json([
@@ -66,9 +57,6 @@ class ModuleContentManagementController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified module content
-     */
     public function update(UpdateModuleContentRequest $request, Module $module, ModuleContent $content)
     {
         try {
@@ -86,9 +74,6 @@ class ModuleContentManagementController extends Controller
         }
     }
 
-    /**
-     * Remove the specified module content and its related content
-     */
     public function destroy(Module $module, ModuleContent $content)
     {
         try {

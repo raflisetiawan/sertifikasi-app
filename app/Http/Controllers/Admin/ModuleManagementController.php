@@ -24,10 +24,6 @@ class ModuleManagementController extends Controller
     {
         $this->moduleManagementService = $moduleManagementService;
     }
-
-    /**
-     * Display a listing of modules for a specific course.
-     */
     public function index($courseId)
     {
         $modules = $this->moduleManagementService->getModulesByCourse($courseId);
@@ -46,9 +42,6 @@ class ModuleManagementController extends Controller
         }
     }
 
-    /**
-     * Store a newly created module.
-     */
     public function store(StoreModuleRequest $request)
     {
         try {
@@ -59,9 +52,6 @@ class ModuleManagementController extends Controller
         }
     }
 
-    /**
-     * Update the specified module.
-     */
     public function update(UpdateModuleRequest $request, Module $module)
     {
         try {
@@ -73,9 +63,6 @@ class ModuleManagementController extends Controller
         }
     }
 
-    /**
-     * Remove the specified module.
-     */
     public function destroy(Module $module)
     {
         try {
@@ -86,9 +73,6 @@ class ModuleManagementController extends Controller
         }
     }
 
-    /**
-     * Reorder modules within a course.
-     */
     public function reorder(ReorderModuleRequest $request)
     {
         try {

@@ -19,9 +19,6 @@ class LiveSessionController extends Controller
         $this->liveSessionService = $liveSessionService;
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request): JsonResponse
     {
         $perPage = $request->query('per_page', 10);
@@ -29,9 +26,6 @@ class LiveSessionController extends Controller
         return LiveSessionResource::collection($liveSessions)->response();
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(LiveSessionRequest $request): JsonResponse
     {
         $liveSession = $this->liveSessionService->createLiveSession($request->validated());

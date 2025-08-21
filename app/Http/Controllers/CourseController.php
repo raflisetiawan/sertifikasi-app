@@ -36,15 +36,9 @@ class CourseController extends Controller
         return new CourseResource(true, 'Data Course Berhasil Ditambahkan!', $course);
     }
 
-    public function show(Course $course)
-    {
-        $course->load('trainers', 'liveSessions');
-        return new CourseResource(true, 'Detail Data course!', $course);
-    }
 
     public function showForAdmin(Course $course)
     {
-        // Tambahkan data kesiapan publikasi untuk admin
         if ($course->status === CourseStatus::PUBLISHED) {
             $course->publication_readiness = [
                 'is_ready' => true,
@@ -72,6 +66,11 @@ class CourseController extends Controller
     {
         $this->courseService->deleteCourse($course);
         return new CourseResource(true, 'Data Course Berhasil Dihapus!', null);
+    }
+    public function show(Course $course)
+    {
+        $course->load('trainers', 'liveSessions');
+        return new CourseResource(true, 'Detail Data course!', $course);
     }
 
     public function relatedCourse(Course $course)

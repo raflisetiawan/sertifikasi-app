@@ -33,7 +33,6 @@ class CourseEnrollmentController extends Controller
     {
         $registration = $this->enrollmentService->getEnrolledCourseDetails($id);
 
-        // Verify user has access
         if (!$registration->isVerifiedAndPaid()) {
             return response()->json([
                 'success' => false,
@@ -44,4 +43,3 @@ class CourseEnrollmentController extends Controller
         return new EnrolledCourseDetailResource($registration);
     }
 }
-
